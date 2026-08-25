@@ -1,11 +1,10 @@
 import { PrismaClient, Role, VideoStatus } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { hash } from "@node-rs/argon2";
 
 const prisma = new PrismaClient();
 
 // Senha do admin apenas para DESENVOLVIMENTO. Documentada no README.
-// Hash com bcrypt (cost 12) — fallback aceito pelo SPEC §4.2; a Fase 2
-// confirma Argon2id conforme o ambiente de deploy.
+// Hash com Argon2id (@node-rs/argon2), igual ao usado no login (SPEC §4.2).
 const DEV_ADMIN_EMAIL = "nycolas.fachi@nstech.com.br";
 const DEV_ADMIN_PASSWORD = "admin1234";
 
@@ -16,7 +15,7 @@ function daysAgo(n: number): Date {
 }
 
 async function main() {
-  const passwordHash = await bcrypt.hash(DEV_ADMIN_PASSWORD, 12);
+  const passwordHash = await hash(DEV_ADMIN_PASSWORD);
 
   // --- 1 admin --------------------------------------------------------------
   const admin = await prisma.user.upsert({

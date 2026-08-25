@@ -38,8 +38,14 @@ export default function Home() {
         ))}
       </section>
 
-      <p className="text-sm text-fg-lo tabular-nums">
-        Próxima fase: autenticação (login do gestor, AccessToken, /enter/&lt;token&gt;).
+      <p className="text-sm text-fg-lo">
+        Fase 2 no ar: login do gestor, AccessToken e /enter/&lt;token&gt;.{" "}
+        <a
+          href="/login"
+          className="text-brand underline-offset-2 transition-colors hover:underline"
+        >
+          Área de gestão →
+        </a>
       </p>
     </main>
   );
