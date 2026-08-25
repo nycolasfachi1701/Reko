@@ -14,14 +14,22 @@ async function FeedList({ userId }: { userId: string }) {
   const videos = await db.video.findMany({
     where: { status: "PUBLISHED" },
     orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-    include: { _count: { select: { viewSessions: true } } },
   });
+  const ids = videos.map((v) => v.id);
 
   const sessions = await db.viewSession.findMany({
-    where: { userId, videoId: { in: videos.map((v) => v.id) } },
+    where: { userId, videoId: { in: ids } },
     select: { videoId: true, maxPositionSec: true, completed: true },
   });
   const byVideo = new Map(sessions.map((s) => [s.videoId, s]));
+
+  // Views só a partir de 3s assistidos (SPEC §6.3 — não inflar métrica).
+  const counts = await db.viewSession.groupBy({
+    by: ["videoId"],
+    where: { videoId: { in: ids }, watchedSeconds: { gte: 3 } },
+    _count: { _all: true },
+  });
+  const viewsByVideo = new Map(counts.map((c) => [c.videoId, c._count._all]));
   const storage = getStorage();
 
   if (videos.length === 0) {
@@ -47,7 +55,7 @@ async function FeedList({ userId }: { userId: string }) {
       thumbnailUrl: v.thumbnailUrl,
       previewSrc: storage.playbackUrl(v.storageKey),
       durationSec: v.durationSec,
-      views: v._count.viewSessions,
+      views: viewsByVideo.get(v.id) ?? 0,
       publishedAt: (v.publishedAt ?? v.createdAt).toISOString(),
       isNew: !s,
       resumeRatio,

@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:aggregate": "tsx prisma/run-aggregate.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

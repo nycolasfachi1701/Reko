@@ -28,10 +28,13 @@ export default async function WatchPage({
     include: {
       tags: true,
       uploadedBy: { select: { name: true } },
-      _count: { select: { viewSessions: true } },
     },
   });
   if (!video) notFound();
+
+  const views = await db.viewSession.count({
+    where: { videoId: id, watchedSeconds: { gte: 3 } },
+  });
 
   const isManager = user.role === Role.MANAGER || user.role === Role.ADMIN;
   if (video.status !== VideoStatus.PUBLISHED && !isManager) notFound();
@@ -57,6 +60,7 @@ export default async function WatchPage({
             src={src}
             poster={video.thumbnailUrl}
             title={video.title}
+            videoId={video.id}
             startAt={startAt}
           />
         </div>
@@ -69,8 +73,8 @@ export default async function WatchPage({
 
         <h1 className="mt-4 text-xl font-bold sm:text-2xl">{video.title}</h1>
         <p className="mt-1 text-sm text-fg-lo tabular-nums">
-          {formatViews(video._count.viewSessions)} ·{" "}
-          {formatRelativeTime(publishedAt)} · {video.uploadedBy.name}
+          {formatViews(views)} · {formatRelativeTime(publishedAt)} ·{" "}
+          {video.uploadedBy.name}
         </p>
 
         {video.tags.length > 0 ? (

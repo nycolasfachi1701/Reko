@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { formatDuration } from "@/lib/utils";
+import { useViewTelemetry } from "./use-view-telemetry";
 
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -16,14 +17,17 @@ export function VideoPlayer({
   src,
   poster,
   title,
+  videoId,
   startAt = 0,
 }: {
   src: string;
   poster: string | null;
   title: string;
+  videoId: string;
   startAt?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  useViewTelemetry(videoRef, videoId);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
