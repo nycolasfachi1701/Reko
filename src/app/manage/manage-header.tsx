@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Role, type User } from "@prisma/client";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { logoutAction } from "./actions";
 
 export function ManageHeader({ user }: { user: User }) {
@@ -34,6 +35,7 @@ export function ManageHeader({ user }: { user: User }) {
               {user.role === Role.ADMIN ? "Administrador" : "Gestor"}
             </span>
           </span>
+          <ThemeToggle />
           <form action={logoutAction}>
             <Button variant="secondary" type="submit">
               Sair

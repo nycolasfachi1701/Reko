@@ -3,36 +3,32 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   Design system Reko (Nstech) — SPEC §8.1 / §8.2
-   Tokens em CSS custom properties: trocar marca/tema = editar só este bloco.
-   Peso visual vem de ELEVAÇÃO + bordas translúcidas (não de linhas sólidas).
-   Tema escuro é o principal; tema claro disponível via [data-theme="light"].
+   Design system Reko (Nstech) — paleta preto-quente + laranja como único acento.
+   Três estados de tema: :root = claro; @media dark = sistema; [data-theme] = escolha.
+   Nomes de token estáveis (usados em todo o app); só os valores mudam por tema.
    ========================================================================== */
 :root {
-  /* Marca — ACENTO (ação primária, estado ativo, linha principal de gráfico) */
   --brand: #ff6600;
-  --brand-strong: #e65a00; /* hover / pressed */
-  --brand-soft: rgba(255, 102, 0, 0.12); /* fundo tonal */
-  --brand-ring: rgba(255, 102, 0, 0.35);
+  --brand-strong: #e15600;
+  --brand-soft: rgba(255, 102, 0, 0.1);
+  --brand-ring: rgba(255, 102, 0, 0.28);
+  --on-brand: #211405;
 
-  /* Superfícies (tema escuro) — profundidade em vez de bordas duras */
-  --surface-0: #0d0d0f; /* fundo da página */
-  --surface-1: #151519; /* card */
-  --surface-2: #1c1c21; /* card elevado */
-  --surface-3: #26262d; /* popover / hover */
+  --surface-0: #f6f5f2;
+  --surface-1: #ffffff;
+  --surface-2: #efece6;
+  --surface-3: #ffffff;
 
-  /* Texto e bordas (bordas translúcidas = mais leve) */
-  --text-hi: #f3f3f5;
-  --text-lo: #9b9ba6;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-hi: #17161a;
+  --text-lo: #56545c;
+  --text-mut: #8b8892;
+  --border: rgba(23, 22, 26, 0.09);
+  --border-strong: rgba(23, 22, 26, 0.16);
 
-  /* Semânticas */
-  --positive: #2dd4a7;
-  --warning: #f5a623;
-  --negative: #f4585e;
+  --positive: #14a06f;
+  --warning: #c67a12;
+  --negative: #d64545;
 
-  /* Escala tipográfica */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -40,47 +36,84 @@
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
   --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
+  --text-4xl: 2.5rem;
 
-  /* Raio */
-  --radius: 14px;
-  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-sm: 10px;
 
-  /* Elevação (sutil no escuro) */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(20, 16, 10, 0.06), 0 8px 24px -14px rgba(20, 16, 10, 0.16);
+  --shadow-md: 0 1px 2px rgba(20, 16, 10, 0.06), 0 14px 34px -16px rgba(20, 16, 10, 0.2);
+  --shadow-lg: 0 30px 60px -24px rgba(20, 16, 10, 0.3);
 
-  /* Motion */
-  --ease: cubic-bezier(0.2, 0, 0, 1);
-  --dur: 200ms;
+  --ease: cubic-bezier(0.2, 0.7, 0, 1);
+  --dur: 220ms;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
-[data-theme="light"] {
-  --brand-soft: rgba(255, 102, 0, 0.1);
-  --surface-0: #fbfbfc;
-  --surface-1: #ffffff;
-  --surface-2: #f4f4f6;
-  --surface-3: #ececef;
-  --text-hi: #17171b;
-  --text-lo: #5c5c68;
-  --border: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.14);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.18);
-  color-scheme: light;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --brand: #ff6a1a;
+    --brand-strong: #ff8642;
+    --brand-soft: rgba(255, 106, 26, 0.14);
+    --brand-ring: rgba(255, 106, 26, 0.32);
+    --on-brand: #1a0f04;
+
+    --surface-0: #0c0c0e;
+    --surface-1: #131316;
+    --surface-2: #1a1a1f;
+    --surface-3: #212128;
+
+    --text-hi: #f4f3f6;
+    --text-lo: #a9a7b2;
+    --text-mut: #6d6b76;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+
+    --positive: #2dd4a7;
+    --warning: #f5a623;
+    --negative: #f4585e;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px -16px rgba(0, 0, 0, 0.55);
+    --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -18px rgba(0, 0, 0, 0.65);
+    --shadow-lg: 0 40px 80px -30px rgba(0, 0, 0, 0.75);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --brand: #ff6a1a;
+  --brand-strong: #ff8642;
+  --brand-soft: rgba(255, 106, 26, 0.14);
+  --brand-ring: rgba(255, 106, 26, 0.32);
+  --on-brand: #1a0f04;
+
+  --surface-0: #0c0c0e;
+  --surface-1: #131316;
+  --surface-2: #1a1a1f;
+  --surface-3: #212128;
+
+  --text-hi: #f4f3f6;
+  --text-lo: #a9a7b2;
+  --text-mut: #6d6b76;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --positive: #2dd4a7;
+  --warning: #f5a623;
+  --negative: #f4585e;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px -16px rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -18px rgba(0, 0, 0, 0.65);
+  --shadow-lg: 0 40px 80px -30px rgba(0, 0, 0, 0.75);
+
+  color-scheme: dark;
 }
 
 @layer base {
   * {
     border-color: var(--border);
-  }
-
-  html {
-    scroll-behavior: smooth;
   }
 
   body {
@@ -91,34 +124,21 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Brilho de marca no topo, via camada fixa composta (não repinta no scroll). */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0 0 auto 0;
-    height: 40rem;
-    background: radial-gradient(
-      55rem 26rem at 50% -10rem,
-      var(--brand-soft),
-      transparent 70%
-    );
-    pointer-events: none;
-    z-index: 0;
+  h1,
+  h2,
+  h3,
+  .display {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+    letter-spacing: -0.02em;
   }
 
   ::selection {
     background: var(--brand);
-    color: #111;
+    color: var(--on-brand);
   }
 
   .tabular-nums {
     font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
-  }
-
-  h1,
-  h2 {
-    letter-spacing: -0.015em;
   }
 
   :focus-visible {
@@ -128,7 +148,7 @@
   }
 }
 
-/* ---------- Motion utilities (só transform/opacity) ---------- */
+/* ---------- Motion ---------- */
 @keyframes reko-in {
   from {
     opacity: 0;
@@ -139,22 +159,16 @@
     transform: none;
   }
 }
-
 @keyframes reko-shimmer {
   100% {
     transform: translateX(100%);
   }
 }
-
 .animate-in {
   animation: reko-in 0.45s var(--ease) both;
 }
-
-/* Elevação com leve subida no hover — leveza e resposta imediata. */
 .lift {
-  transition:
-    transform var(--dur) var(--ease),
-    box-shadow var(--dur) var(--ease),
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
     border-color var(--dur) var(--ease);
 }
 .lift:hover {
@@ -162,8 +176,6 @@
   box-shadow: var(--shadow-lg);
   border-color: var(--border-strong);
 }
-
-/* Skeleton com brilho passando (mais vivo que um pulse). */
 .skeleton {
   position: relative;
   overflow: hidden;
@@ -174,19 +186,222 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.06),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(150, 150, 160, 0.14), transparent);
   animation: reko-shimmer 1.4s infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
+/* ========================= Feed (direção aprovada) ========================= */
+.rk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--surface-0) 82%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.rk-glyph {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: var(--on-brand);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--brand) 70%, transparent);
+}
+.rk-search input {
+  width: 100%;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-hi);
+  font: inherit;
+  font-size: 14px;
+  padding: 0 14px 0 42px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.rk-search input::placeholder {
+  color: var(--text-mut);
+}
+.rk-search input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px var(--brand-ring);
+}
+.rk-chip {
+  height: 34px;
+  padding: 0 15px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-lo);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.16s var(--ease);
+}
+.rk-chip:hover {
+  color: var(--text-hi);
+  border-color: var(--text-mut);
+}
+.rk-chip[aria-pressed="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.rk-sort select {
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-hi);
+  font: inherit;
+  font-size: 13px;
+  padding: 0 10px;
+  cursor: pointer;
+}
+.rk-hero {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  min-height: 340px;
+  display: flex;
+  align-items: flex-end;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  background: radial-gradient(120% 140% at 80% 0%, #3a2417 0%, #17110c 55%, #0b0a09 100%);
+}
+.rk-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(8, 7, 6, 0.92) 0%, rgba(8, 7, 6, 0.55) 45%, rgba(8, 7, 6, 0) 78%);
+}
+.rk-hero-play {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  z-index: 2;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--brand);
+  color: var(--on-brand);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--brand) 80%, transparent);
+  transition: transform 0.18s var(--ease);
+}
+.rk-hero-play:hover {
+  transform: scale(1.08);
+}
+.rk-thumb {
+  position: relative;
+  aspect-ratio: 16/9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease);
+  display: grid;
+  place-items: center;
+}
+.rk-card:hover .rk-thumb {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.rk-thumb .rk-mono {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 64px;
+  opacity: 0.32;
+  letter-spacing: -0.04em;
+}
+.rk-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(12, 10, 8, 0.55);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: all 0.22s var(--ease);
+}
+.rk-card:hover .rk-play {
+  opacity: 1;
+  transform: scale(1);
+}
+.rk-dur {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(8, 7, 6, 0.82);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 7px;
+  border-radius: 7px;
+}
+.rk-new {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 7px;
+}
+.rk-resume {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+}
+.rk-resume span {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+}
+
+/* Toggle de tema: ícone certo por estado, sem depender de JS (evita flicker). */
+.theme-ico-moon {
+  display: none;
+}
+:root[data-theme="dark"] .theme-ico-sun {
+  display: none;
+}
+:root[data-theme="dark"] .theme-ico-moon {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-ico-sun {
+    display: none;
   }
+  :root:not([data-theme="light"]) .theme-ico-moon {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {

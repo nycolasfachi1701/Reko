@@ -13,8 +13,10 @@ test("espectador entra por link e a visualização é registrada", async ({ page
 
   await page.goto(`/enter/${F.VIEWER_RAW_TOKEN}`);
 
-  // caiu no feed do espectador
-  await expect(page.getByRole("heading", { name: "Vídeos", exact: true })).toBeVisible();
+  // caiu no feed do espectador (marca visível no topo)
+  await expect(
+    page.getByRole("link", { name: "Reko, por Nstech" }),
+  ).toBeVisible();
 
   // abre o vídeo publicado
   await page.goto(`/v/${F.PUBLISHED_VIDEO_ID}`);

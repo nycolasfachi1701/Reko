@@ -1,47 +1,77 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getStorage } from "@/lib/storage";
-import { Logo } from "@/components/logo";
-import { FeedSkeleton } from "@/components/feed/feed-skeleton";
-import { VideoCard, type FeedVideo } from "@/components/feed/video-card";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { FeedExperience, type FeedVideo } from "@/components/feed/feed-experience";
 
 export const dynamic = "force-dynamic";
 
-async function FeedList({ userId }: { userId: string }) {
+const MIN_VIEW_SECONDS = 3;
+
+function Landing() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
+        <span className="flex items-center gap-2.5">
+          <span className="rk-glyph" aria-hidden>
+            R
+          </span>
+          <span className="font-display text-[22px] font-extrabold tracking-tight">
+            Reko
+            <span className="ml-2 font-sans text-xs font-medium text-fg-mut">por Nstech</span>
+          </span>
+        </span>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/login"
+            className="rounded-sm border border-[var(--border-strong)] bg-surface-1 px-3 py-2 text-sm text-fg-lo transition-colors hover:bg-surface-2 hover:text-fg-hi"
+          >
+            Área de gestão →
+          </Link>
+        </div>
+      </header>
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 py-16">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-brand">
+          Plataforma de vídeos da Nstech
+        </p>
+        <h1 className="max-w-3xl font-display text-[clamp(32px,5vw,56px)] font-extrabold leading-[1.02] tracking-tight">
+          Assista aos vídeos da sua equipe, sem complicação.
+        </h1>
+        <p className="mt-5 max-w-xl text-lg text-fg-lo">
+          O acesso é por um link enviado pela sua equipe — sem senha e sem cadastro. Já
+          tem um link? É só abri-lo.
+        </p>
+      </main>
+    </div>
+  );
+}
+
+export default async function Home() {
+  const user = await getCurrentUser();
+  if (!user) return <Landing />;
+
   const videos = await db.video.findMany({
     where: { status: "PUBLISHED" },
     orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    include: { tags: true, uploadedBy: { select: { name: true } } },
   });
   const ids = videos.map((v) => v.id);
 
-  const sessions = await db.viewSession.findMany({
-    where: { userId, videoId: { in: ids } },
-    select: { videoId: true, maxPositionSec: true, completed: true },
-  });
+  const [sessions, counts] = await Promise.all([
+    db.viewSession.findMany({
+      where: { userId: user.id, videoId: { in: ids } },
+      select: { videoId: true, maxPositionSec: true, completed: true },
+    }),
+    db.viewSession.groupBy({
+      by: ["videoId"],
+      where: { videoId: { in: ids }, watchedSeconds: { gte: MIN_VIEW_SECONDS } },
+      _count: { _all: true },
+    }),
+  ]);
   const byVideo = new Map(sessions.map((s) => [s.videoId, s]));
-
-  // Views só a partir de 3s assistidos (SPEC §6.3 — não inflar métrica).
-  const counts = await db.viewSession.groupBy({
-    by: ["videoId"],
-    where: { videoId: { in: ids }, watchedSeconds: { gte: 3 } },
-    _count: { _all: true },
-  });
   const viewsByVideo = new Map(counts.map((c) => [c.videoId, c._count._all]));
-  const storage = getStorage();
-
-  if (videos.length === 0) {
-    return (
-      <div className="rounded-lg border border-[var(--border)] bg-surface-1 p-12 text-center">
-        <p className="text-fg-hi">Nenhum vídeo publicado ainda.</p>
-        <p className="mx-auto mt-1 max-w-sm text-sm text-fg-lo">
-          Assim que a sua equipe publicar um vídeo, ele aparece aqui.
-        </p>
-      </div>
-    );
-  }
 
   const items: FeedVideo[] = videos.map((v) => {
     const s = byVideo.get(v.id);
@@ -53,82 +83,29 @@ async function FeedList({ userId }: { userId: string }) {
       id: v.id,
       title: v.title,
       thumbnailUrl: v.thumbnailUrl,
-      previewSrc: storage.playbackUrl(v.storageKey),
       durationSec: v.durationSec,
       views: viewsByVideo.get(v.id) ?? 0,
       publishedAt: (v.publishedAt ?? v.createdAt).toISOString(),
       isNew: !s,
       resumeRatio,
+      uploaderName: v.uploadedBy.name,
+      tags: v.tags.map((t) => t.tag),
     };
   });
 
-  return (
-    <div className="animate-in grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((v) => (
-        <VideoCard key={v.id} video={v} />
-      ))}
-    </div>
-  );
-}
-
-function Landing() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-        <Logo />
-        <Link
-          href="/login"
-          className="text-sm text-fg-lo transition-colors hover:text-fg-hi"
-        >
-          Área de gestão →
-        </Link>
-      </header>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 py-16">
-        <p className="mb-3 text-sm font-medium uppercase tracking-wider text-brand">
-          Plataforma interna de vídeos
-        </p>
-        <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight sm:text-4xl">
-          Assista aos vídeos da sua equipe, sem complicação.
-        </h1>
-        <p className="mt-4 max-w-xl text-lg text-fg-lo">
-          O acesso é por um link enviado pela sua equipe — sem senha e sem
-          cadastro. Já tem um link? É só abri-lo.
-        </p>
-      </main>
-    </div>
-  );
-}
-
-export default async function Home() {
-  const user = await getCurrentUser();
-  if (!user) return <Landing />;
-
-  const isManager = user.role === Role.MANAGER || user.role === Role.ADMIN;
+  // tags mais frequentes (rótulo capitalizado para os chips)
+  const freq = new Map<string, number>();
+  for (const v of items) for (const t of v.tags) freq.set(t, (freq.get(t) ?? 0) + 1);
+  const tags = [...freq.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([t]) => t);
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-surface-0/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
-          <Logo />
-          {isManager ? (
-            <Link
-              href="/manage"
-              className="text-sm text-fg-lo transition-colors hover:text-fg-hi"
-            >
-              Área de gestão →
-            </Link>
-          ) : (
-            <span className="text-sm text-fg-lo">Olá, {user.name.split(" ")[0]}</span>
-          )}
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <h1 className="mb-6 text-xl font-bold">Vídeos</h1>
-        <Suspense fallback={<FeedSkeleton />}>
-          <FeedList userId={user.id} />
-        </Suspense>
-      </main>
-    </div>
+    <FeedExperience
+      videos={items}
+      tags={tags}
+      user={{ name: user.name, isManager: user.role !== Role.VIEWER }}
+    />
   );
 }

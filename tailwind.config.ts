@@ -23,6 +23,7 @@ const config: Config = {
         fg: {
           hi: "var(--text-hi)",
           lo: "var(--text-lo)",
+          mut: "var(--text-mut)",
         },
         positive: "var(--positive)",
         warning: "var(--warning)",
@@ -39,6 +40,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
       },
       fontSize: {
         xs: "var(--text-xs)",
