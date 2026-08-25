@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Tokens de design Nstech (SPEC §8.1 / §8.2)
+   Fonte da paleta: index.html do portal CIOT ANTT (marca Nstech).
+   Troca de marca/tema = editar SÓ este bloco.
+   Tema escuro é o principal; tema claro disponível via [data-theme="light"].
+   ========================================================================== */
+:root {
+  /* Marca — é ACENTO (ação primária, estado ativo, linha principal de gráfico) */
+  --brand: #ff6600;
+  --brand-strong: #cc5200; /* hover / pressed */
+  --brand-soft: rgba(255, 102, 0, 0.12); /* fundo tonal */
+
+  /* Superfícies (tema escuro) */
+  --surface-0: #111111; /* fundo da página */
+  --surface-1: #1c1c1c; /* card */
+  --surface-2: #242424; /* card elevado / popover */
+
+  /* Texto e bordas */
+  --text-hi: #e8e8e8;
+  --text-lo: #a1a1aa;
+  --border: #333333;
+
+  /* Semânticas */
+  --positive: #22c55e;
+  --warning: #f59e0b;
+  --negative: #ef4444;
+
+  /* Escala tipográfica */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Raio único para todo o produto */
+  --radius: 10px;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --surface-0: #ffffff;
+  --surface-1: #f6f6f7;
+  --surface-2: #ececee;
+  --text-hi: #18181b;
+  --text-lo: #52525b;
+  --border: #e2e2e5;
+  --brand-soft: rgba(255, 102, 0, 0.1);
+  color-scheme: light;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--surface-0);
+    color: var(--text-hi);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Números sempre com largura tabular (SPEC §8.2) */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Foco visível e bonito em tudo navegável por teclado (SPEC §8.3 / §9) */
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: calc(var(--radius) - 4px);
+  }
+}
+
+/* Transições padrão do produto: 150–250ms, só transform/opacity (SPEC §8.3).
+   Respeita prefers-reduced-motion desligando movimento. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

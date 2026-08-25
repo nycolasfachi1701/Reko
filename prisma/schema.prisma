@@ -1,0 +1,192 @@
+// Plataforma de Vídeos Nstech — modelo de dados (SPEC §5)
+// PostgreSQL + Prisma. Agregações de métricas ficam no banco.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  VIEWER
+  MANAGER
+  ADMIN
+}
+
+enum VideoStatus {
+  DRAFT
+  PROCESSING
+  PUBLISHED
+  ARCHIVED
+}
+
+enum VoteValue {
+  LIKE
+  DISLIKE
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String?   @unique // nullable para o espectador (entra por link)
+  passwordHash String? // só gestores/admins têm senha
+  role         Role      @default(VIEWER)
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  lastSeenAt   DateTime?
+
+  // relações
+  accessTokens  AccessToken[] @relation("TokenOwner")
+  createdTokens AccessToken[] @relation("TokenCreator")
+  sessions      Session[]
+  videos        Video[] // vídeos que este usuário subiu
+  viewSessions  ViewSession[]
+  votes         Vote[]
+  reactions     Reaction[]
+  comments      Comment[]
+}
+
+model AccessToken {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation("TokenOwner", fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique // SHA-256 do token; nunca guardamos o texto puro
+  expiresAt   DateTime
+  usedAt      DateTime? // uso único
+  createdById String
+  createdBy   User      @relation("TokenCreator", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  userAgent String
+  ipHash    String // SHA-256(ip + salt); nunca o IP em texto puro
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Video {
+  id                      String      @id @default(cuid())
+  title                   String
+  description             String      @db.Text
+  storageKey              String
+  thumbnailUrl            String?
+  durationSec             Int
+  status                  VideoStatus @default(DRAFT)
+  publishedAt             DateTime?
+  uploadedById            String
+  uploadedBy              User        @relation(fields: [uploadedById], references: [id])
+  targetViews             Int? // meta de views (alimenta o bloco Expectativa)
+  expectedCompletionRate  Float? // meta de taxa de conclusão (0..1)
+  createdAt               DateTime    @default(now())
+
+  tags         VideoTag[]
+  viewSessions ViewSession[]
+  votes        Vote[]
+  reactions    Reaction[]
+  comments     Comment[]
+  retention    Retention[]
+
+  @@index([status, publishedAt])
+}
+
+model VideoTag {
+  videoId String
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  tag     String
+
+  @@id([videoId, tag])
+}
+
+model ViewSession {
+  id             String      @id @default(cuid())
+  videoId        String
+  video          Video       @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt      DateTime    @default(now())
+  lastBeatAt     DateTime    @default(now())
+  watchedSeconds Int         @default(0) // tempo real assistido
+  maxPositionSec Int         @default(0) // posição mais avançada alcançada
+  completed      Boolean     @default(false)
+  device         String
+  referrer       String?
+  heartbeats     Heartbeat[]
+
+  @@index([videoId, startedAt])
+  @@index([userId])
+}
+
+model Heartbeat {
+  id            String      @id @default(cuid())
+  viewSessionId String
+  viewSession   ViewSession @relation(fields: [viewSessionId], references: [id], onDelete: Cascade)
+  positionSec   Int
+  at            DateTime    @default(now())
+
+  // Cresce rápido: retido 90 dias, agregado diariamente em Retention.
+  @@index([viewSessionId])
+  @@index([at])
+}
+
+model Retention {
+  videoId String
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  bucket  Int // 0..99 — 100 fatias percentuais do vídeo, independente da duração
+  viewers Int
+
+  @@id([videoId, bucket])
+}
+
+model Vote {
+  videoId   String
+  video     Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value     VoteValue // exclusivo: um voto por usuário por vídeo
+  updatedAt DateTime  @updatedAt
+
+  @@id([videoId, userId])
+  @@index([videoId])
+}
+
+model Reaction {
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String // cumulativo: o usuário pode marcar vários emojis
+  createdAt DateTime @default(now())
+
+  @@id([videoId, userId, emoji])
+  @@index([videoId])
+}
+
+model Comment {
+  videoId  String
+  video    Video     @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  id       String    @id @default(cuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId String? // um nível de resposta (SPEC §6.2)
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies  Comment[] @relation("CommentReplies")
+  body     String    @db.Text
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+  deletedAt DateTime? // soft delete: mantém a árvore de respostas de pé
+
+  @@index([videoId, createdAt])
+  @@index([parentId])
+}
