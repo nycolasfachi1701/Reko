@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Marca Nstech: glifo laranja + wordmark. A cor da marca é acento. */
+/** Marca Reko (Nstech): glifo laranja + wordmark. A cor da marca é acento. */
 export function Logo({
   className,
   showText = true,
@@ -14,12 +14,14 @@ export function Logo({
         aria-hidden
         className="grid h-8 w-8 place-items-center rounded bg-brand text-lg font-black leading-none text-[#111]"
       >
-        n
+        R
       </span>
       {showText ? (
         <span className="text-lg font-black tracking-tight text-fg-hi">
-          nstech
-          <span className="font-medium text-fg-lo"> vídeos</span>
+          Reko
+          <span className="ml-1.5 align-middle text-xs font-medium text-fg-lo">
+            by Nstech
+          </span>
         </span>
       ) : null}
     </span>

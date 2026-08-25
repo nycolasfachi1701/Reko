@@ -11,8 +11,9 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Plataforma de Vídeos — Nstech",
-  description: "Assista, comente e acompanhe o desempenho dos vídeos.",
+  title: "Reko — Nstech",
+  description:
+    "Reko, a plataforma de vídeos da Nstech: assista e acompanhe o desempenho dos vídeos.",
 };
 
 export default function RootLayout({

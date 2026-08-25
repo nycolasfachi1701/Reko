@@ -1,6 +1,6 @@
-# Plataforma de Vídeos — Nstech
+# Reko — plataforma de vídeos da Nstech
 
-Plataforma interna de vídeos com dois papéis: **espectador** (entra por link, assiste, comenta, reage) e **gestor** (faz login, publica, analisa desempenho). Construída fase a fase a partir de `SPEC.md`.
+**Reko** é a plataforma interna de vídeos da Nstech, com dois papéis: **espectador** (entra por link e assiste — sem conta, apenas visualização) e **gestor** (faz login, publica e analisa o desempenho). Construída fase a fase a partir de `SPEC.md`.
 
 ## Stack
 
