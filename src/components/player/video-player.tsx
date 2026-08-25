@@ -19,12 +19,14 @@ export function VideoPlayer({
   title,
   videoId,
   startAt = 0,
+  retention,
 }: {
   src: string;
   poster: string | null;
   title: string;
   videoId: string;
   startAt?: number;
+  retention?: number[]; // 0..1 por bucket (curva de audiência), opcional
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   useViewTelemetry(videoRef, videoId);
@@ -242,6 +244,22 @@ export function VideoPlayer({
           }}
           className="group/bar relative mb-2 h-3 cursor-pointer"
         >
+          {/* Assinatura: curva de retenção (onde a audiência mais assiste) */}
+          {retention && retention.length > 1 ? (
+            <svg
+              viewBox="0 0 100 10"
+              preserveAspectRatio="none"
+              className="pointer-events-none absolute inset-0 h-full w-full opacity-40"
+              aria-hidden
+            >
+              <polygon
+                points={`0,10 ${retention
+                  .map((v, i) => `${((i / (retention.length - 1)) * 100).toFixed(2)},${(10 - Math.min(1, Math.max(0, v)) * 10).toFixed(2)}`)
+                  .join(" ")} 100,10`}
+                fill="var(--brand)"
+              />
+            </svg>
+          ) : null}
           <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 rounded-full bg-white/25">
             <div
               className="absolute h-full rounded-full bg-white/30"

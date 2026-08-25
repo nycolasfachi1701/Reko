@@ -4,6 +4,7 @@ import { Role, VideoStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getStorage } from "@/lib/storage";
+import { videoRetention } from "@/lib/analytics-data";
 import { Logo } from "@/components/logo";
 import { VideoPlayer } from "@/components/player/video-player";
 import { formatRelativeTime, formatViews } from "@/lib/format";
@@ -43,6 +44,13 @@ export default async function WatchPage({
   const startAt = t ? Math.max(0, Number.parseInt(t, 10) || 0) : 0;
   const publishedAt = video.publishedAt ?? video.createdAt;
 
+  // curva de retenção (assinatura na barra do player), se já agregada
+  const ret = await videoRetention(video.id);
+  const peak = Math.max(...ret.values, 1);
+  const retention = ret.values.some((v) => v > 0)
+    ? ret.values.map((v) => v / peak)
+    : undefined;
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-[var(--border)]">
@@ -55,13 +63,17 @@ export default async function WatchPage({
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <div className="lg:sticky lg:top-4">
+        <div
+          className="lg:sticky lg:top-4"
+          style={{ viewTransitionName: `poster-${video.id}` }}
+        >
           <VideoPlayer
             src={src}
             poster={video.thumbnailUrl}
             title={video.title}
             videoId={video.id}
             startAt={startAt}
+            retention={retention}
           />
         </div>
 

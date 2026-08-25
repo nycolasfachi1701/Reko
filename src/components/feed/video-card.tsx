@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type MouseEvent, useRef, useState } from "react";
 import { formatDuration } from "@/lib/utils";
 import { formatRelativeTime, formatViews } from "@/lib/format";
 
@@ -25,9 +26,29 @@ function canHover(): boolean {
 }
 
 export function VideoCard({ video }: { video: FeedVideo }) {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [previewing, setPreviewing] = useState(false);
+
+  function onNavigate(e: MouseEvent<HTMLAnchorElement>) {
+    // Progressive enhancement: morfa a miniatura no player onde suportado.
+    const href = `/v/${video.id}`;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !reduce &&
+      "startViewTransition" in document
+    ) {
+      e.preventDefault();
+      (
+        document as Document & {
+          startViewTransition: (cb: () => void) => void;
+        }
+      ).startViewTransition(() => router.push(href));
+    }
+  }
 
   function startPreview() {
     if (!canHover()) return;
@@ -55,11 +76,15 @@ export function VideoCard({ video }: { video: FeedVideo }) {
   return (
     <Link
       href={`/v/${video.id}`}
+      onClick={onNavigate}
       onMouseEnter={startPreview}
       onMouseLeave={stopPreview}
       className="group flex flex-col gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-4"
     >
-      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface-2">
+      <div
+        className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface-2"
+        style={{ viewTransitionName: `poster-${video.id}` }}
+      >
         {video.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
