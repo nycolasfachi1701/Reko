@@ -46,7 +46,11 @@ export default async function VideosPage() {
         ) : (
           <Card className="divide-y divide-[var(--border)]">
             {videos.map((v) => (
-              <div key={v.id} className="flex items-center gap-4 p-3">
+              <div
+                key={v.id}
+                data-testid={`video-row-${v.id}`}
+                className="flex items-center gap-4 p-3"
+              >
                 <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded bg-surface-0">
                   {v.thumbnailUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element

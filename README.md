@@ -33,10 +33,29 @@ O seed cria um admin para testes locais:
 | `npm run build` | `prisma generate` + build de produção |
 | `npm run lint` | ESLint (config Next) |
 | `npm test` | Testes de unidade (Vitest) |
+| `npm run test:e2e` | Testes E2E (Playwright) — rode `npm run build` antes |
 | `npm run db:migrate` | Aplica migrations em dev |
 | `npm run db:seed` | Popula dados de exemplo |
 | `npm run db:reset` | Reseta o banco e re-semeia |
+| `npm run db:aggregate` | Agrega a retenção (job diário; roda via cron em prod) |
 | `npm run db:studio` | Prisma Studio (inspeção do banco) |
+
+### Testes E2E
+
+O Playwright roda contra o build de produção (determinístico). Na primeira vez, instale o navegador:
+
+```bash
+npx playwright install chromium
+```
+
+Depois, a cada execução:
+
+```bash
+npm run build
+npm run test:e2e
+```
+
+Dois fluxos: (a) espectador entra por link, abre o vídeo e a visualização é registrada; (b) gestor faz login, publica um vídeo e confere o bloco Visualizações.
 
 ## Design
 

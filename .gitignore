@@ -25,6 +25,11 @@ next-env.d.ts
 # storage local de mídia (dev)
 /storage
 
+# playwright
+/test-results
+/playwright-report
+/playwright/.cache
+
 # misc
 .DS_Store
 *.pem
