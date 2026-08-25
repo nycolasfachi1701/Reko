@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth/session";
 import { Role } from "@prisma/client";
+import { getCurrentUser } from "@/lib/auth/session";
+import { Logo } from "@/components/logo";
+import { Card } from "@/components/ui";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -8,7 +10,6 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
-  // Já logado como gestor? Vai direto para o painel.
   const user = await getCurrentUser();
   if (user && (user.role === Role.MANAGER || user.role === Role.ADMIN)) {
     redirect("/manage");
@@ -18,16 +19,23 @@ export default async function LoginPage({
   const safeNext = next?.startsWith("/manage") ? next : "/manage";
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
-      <div className="w-full max-w-sm rounded-lg border bg-surface-1 p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <span className="inline-block h-7 w-2 rounded bg-brand" aria-hidden />
-          <h1 className="text-xl font-bold">
-            Entrar <span className="text-fg-lo">· gestão</span>
-          </h1>
-        </div>
-        <LoginForm next={safeNext} />
+    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-16">
+      <div className="mb-8">
+        <Logo />
       </div>
+
+      <Card className="w-full max-w-sm p-8 shadow-2xl shadow-black/30">
+        <h1 className="text-xl font-bold">Entrar na gestão</h1>
+        <p className="mb-6 mt-1 text-sm text-fg-lo">
+          Acesso para gestores e administradores.
+        </p>
+        <LoginForm next={safeNext} />
+      </Card>
+
+      <p className="mt-6 max-w-sm text-center text-xs text-fg-lo">
+        Espectadores entram pelo link de acesso enviado pela sua equipe — sem
+        senha.
+      </p>
     </main>
   );
 }

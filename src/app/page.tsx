@@ -1,52 +1,39 @@
-// Placeholder da Fase 1. O feed real do espectador chega na Fase 4.
-// Não consulta o banco de propósito: mantém o build independente do DB.
+import Link from "next/link";
+import { Logo } from "@/components/logo";
 
-const swatches = [
-  { name: "brand", className: "bg-brand" },
-  { name: "brand-strong", className: "bg-brand-strong" },
-  { name: "surface-1", className: "bg-surface-1" },
-  { name: "surface-2", className: "bg-surface-2" },
-  { name: "positive", className: "bg-positive" },
-  { name: "warning", className: "bg-warning" },
-  { name: "negative", className: "bg-negative" },
-];
-
+// Placeholder da home. O feed real do espectador chega na Fase 4.
 export default function Home() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-8 px-6 py-16">
-      <div className="flex items-center gap-3">
-        <span className="inline-block h-8 w-2 rounded bg-brand" aria-hidden />
-        <h1 className="text-3xl font-black tracking-tight">
-          Plataforma de Vídeos <span className="text-brand">Nstech</span>
-        </h1>
-      </div>
-
-      <p className="max-w-prose text-lg text-fg-lo">
-        Fase 1 concluída — fundação no ar: Next.js (App Router, TypeScript
-        strict), Tailwind com tokens de marca, schema Prisma e seed de dados.
-      </p>
-
-      <section aria-label="Tokens de marca" className="flex flex-wrap gap-3">
-        {swatches.map((s) => (
-          <div
-            key={s.name}
-            className="flex flex-col items-center gap-2 rounded border border-[var(--border)] bg-surface-1 p-3"
-          >
-            <span className={`h-12 w-12 rounded ${s.className}`} aria-hidden />
-            <span className="text-xs text-fg-lo">{s.name}</span>
-          </div>
-        ))}
-      </section>
-
-      <p className="text-sm text-fg-lo">
-        Fase 2 no ar: login do gestor, AccessToken e /enter/&lt;token&gt;.{" "}
-        <a
+    <div className="flex min-h-screen flex-col">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
+        <Logo />
+        <Link
           href="/login"
-          className="text-brand underline-offset-2 transition-colors hover:underline"
+          className="text-sm text-fg-lo transition-colors hover:text-fg-hi"
         >
           Área de gestão →
-        </a>
-      </p>
-    </main>
+        </Link>
+      </header>
+
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 py-16">
+        <p className="mb-3 text-sm font-medium uppercase tracking-wider text-brand">
+          Plataforma interna de vídeos
+        </p>
+        <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+          Assista, acompanhe e entenda o desempenho dos seus vídeos.
+        </h1>
+        <p className="mt-4 max-w-xl text-lg text-fg-lo">
+          O feed de vídeos aparece aqui. Espectadores entram por um link de
+          acesso — sem senha e sem cadastro.
+        </p>
+
+        <div className="mt-8">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-surface-1 px-3 py-1 text-xs text-fg-lo">
+            <span className="h-1.5 w-1.5 rounded-full bg-positive" aria-hidden />
+            Fundação e autenticação prontas · feed em construção (Fase 4)
+          </span>
+        </div>
+      </main>
+    </div>
   );
 }

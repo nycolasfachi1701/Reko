@@ -1,3 +1,6 @@
+import { Logo } from "@/components/logo";
+import { Card } from "@/components/ui";
+
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? "suporte@nstech.com.br";
 
 export default async function EnterExpiredPage({
@@ -17,24 +20,28 @@ export default async function EnterExpiredPage({
   )}`;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md rounded-lg border bg-surface-1 p-8 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-16">
+      <div className="mb-8">
+        <Logo />
+      </div>
+
+      <Card className="w-full max-w-md p-8 text-center shadow-2xl shadow-black/30">
         <div
-          className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full"
+          className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-full text-2xl"
           style={{ backgroundColor: "var(--brand-soft)" }}
           aria-hidden
         >
-          <span className="text-2xl">🔑</span>
+          🔑
         </div>
-        <h1 className="mb-2 text-xl font-bold">Acesso indisponível</h1>
-        <p className="mb-6 text-fg-lo">{message}</p>
+        <h1 className="text-xl font-bold">Acesso indisponível</h1>
+        <p className="mx-auto mb-6 mt-2 max-w-sm text-sm text-fg-lo">{message}</p>
         <a
           href={mailto}
-          className="inline-block rounded bg-brand px-4 py-2 font-medium text-[#111] transition-colors duration-200 ease-brand hover:bg-brand-strong"
+          className="inline-flex items-center justify-center rounded bg-brand px-4 py-2.5 text-sm font-medium text-[#111] transition-colors duration-200 ease-brand hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
         >
           Pedir novo acesso
         </a>
-      </div>
+      </Card>
     </main>
   );
 }
