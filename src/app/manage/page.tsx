@@ -18,6 +18,20 @@ export default async function ManageHome() {
         </p>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-2">
+          <Link
+            href="/manage/videos"
+            className="group rounded-lg border border-[var(--border)] bg-surface-1 p-5 transition-colors duration-200 ease-brand hover:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
+          >
+            <div className="mb-3 grid h-9 w-9 place-items-center rounded bg-[var(--brand-soft)] text-brand">
+              🎬
+            </div>
+            <h2 className="font-semibold group-hover:text-brand">Vídeos</h2>
+            <p className="mt-1 text-sm text-fg-lo">
+              Enviar, publicar, editar e arquivar vídeos.
+            </p>
+            <p className="mt-3 text-xs text-brand">Abrir →</p>
+          </Link>
+
           <Card className="p-5">
             <div className="mb-3 grid h-9 w-9 place-items-center rounded bg-[var(--brand-soft)] text-brand">
               📊
