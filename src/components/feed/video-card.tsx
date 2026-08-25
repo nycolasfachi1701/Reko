@@ -79,10 +79,10 @@ export function VideoCard({ video }: { video: FeedVideo }) {
       onClick={onNavigate}
       onMouseEnter={startPreview}
       onMouseLeave={stopPreview}
-      className="group flex flex-col gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-4"
+      className="group flex flex-col gap-3 rounded-lg transition-transform duration-200 ease-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-4 motion-safe:hover:-translate-y-1"
     >
       <div
-        className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface-2"
+        className="relative aspect-video w-full overflow-hidden rounded-lg bg-surface-2 shadow-sm ring-1 ring-[var(--border)] transition-shadow duration-200 group-hover:shadow-lg"
         style={{ viewTransitionName: `poster-${video.id}` }}
       >
         {video.thumbnailUrl ? (

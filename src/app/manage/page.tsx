@@ -3,8 +3,9 @@ import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { dashboardStats } from "@/lib/analytics-data";
 import { variation } from "@/lib/analytics";
-import { formatPercent, formatViews, formatWatchTime } from "@/lib/format";
+import { formatViews, formatWatchTime } from "@/lib/format";
 import { Card } from "@/components/ui";
+import { Counter } from "@/components/counter";
 import { ManageHeader } from "./manage-header";
 import { DashboardTable } from "./dashboard-table";
 
@@ -27,19 +28,29 @@ function VariationBadge({ value }: { value: number | null }) {
 function KpiCard({
   label,
   value,
+  format,
   variationValue,
+  delay = 0,
 }: {
   label: string;
-  value: string;
+  value: number;
+  format?: (n: number) => string;
   variationValue: number | null;
+  delay?: number;
 }) {
   return (
-    <Card className="p-4">
+    <Card
+      hover
+      className="animate-in p-5"
+      style={{ animationDelay: `${delay}ms` }}
+    >
       <p className="text-sm text-fg-lo">{label}</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
-      <div className="mt-1 flex items-center gap-1">
+      <p className="mt-2 text-3xl font-bold tabular-nums">
+        <Counter value={value} format={format} />
+      </p>
+      <div className="mt-2 flex items-center gap-1.5">
         <VariationBadge value={variationValue} />
-        <span className="text-xs text-fg-lo">vs. período anterior</span>
+        <span className="text-xs text-fg-lo">vs. anterior</span>
       </div>
     </Card>
   );
@@ -83,23 +94,29 @@ export default async function DashboardPage({
         <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard
             label="Views"
-            value={c.views.toLocaleString("pt-BR")}
+            value={c.views}
             variationValue={variation(c.views, p.views)}
+            delay={0}
           />
           <KpiCard
             label="Tempo assistido"
-            value={formatWatchTime(c.watchedSec)}
+            value={c.watchedSec}
+            format={formatWatchTime}
             variationValue={variation(c.watchedSec, p.watchedSec)}
+            delay={60}
           />
           <KpiCard
             label="Taxa de conclusão"
-            value={formatPercent(c.completionRate)}
+            value={Math.round(c.completionRate * 100)}
+            format={(n) => `${n}%`}
             variationValue={variation(c.completionRate, p.completionRate)}
+            delay={120}
           />
           <KpiCard
             label="Espectadores distintos"
-            value={c.distinctViewers.toLocaleString("pt-BR")}
+            value={c.distinctViewers}
             variationValue={variation(c.distinctViewers, p.distinctViewers)}
+            delay={180}
           />
         </section>
 

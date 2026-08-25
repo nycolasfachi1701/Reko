@@ -25,7 +25,7 @@ export default async function EnterExpiredPage({
         <Logo />
       </div>
 
-      <Card className="w-full max-w-md p-8 text-center shadow-2xl shadow-black/30">
+      <Card className="animate-in w-full max-w-md p-8 text-center shadow-lg">
         <div
           className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-full text-2xl"
           style={{ backgroundColor: "var(--brand-soft)" }}

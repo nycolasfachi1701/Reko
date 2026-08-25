@@ -109,7 +109,7 @@ export default async function VideoDetailPage({
         </div>
 
         {/* ---- Bloco: Visualizações ---- */}
-        <section className="mt-8">
+        <section className="mt-8 animate-in">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Visualizações</h2>
             <ExportLink videoId={video.id} block="visualizacoes" />
@@ -157,7 +157,7 @@ export default async function VideoDetailPage({
         </section>
 
         {/* ---- Bloco: Percepção ---- */}
-        <section className="mt-8">
+        <section className="mt-8 animate-in">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Percepção</h2>
             <ExportLink videoId={video.id} block="percepcao" />
@@ -197,7 +197,7 @@ export default async function VideoDetailPage({
         </section>
 
         {/* ---- Bloco: Expectativa ---- */}
-        <section className="mt-8">
+        <section className="mt-8 animate-in">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Expectativa</h2>
             <ExportLink videoId={video.id} block="expectativa" />

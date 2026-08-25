@@ -49,7 +49,7 @@ export default async function VideosPage() {
               <div
                 key={v.id}
                 data-testid={`video-row-${v.id}`}
-                className="flex items-center gap-4 p-3"
+                className="flex items-center gap-4 p-3 transition-colors hover:bg-surface-2"
               >
                 <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded bg-surface-0">
                   {v.thumbnailUrl ? (

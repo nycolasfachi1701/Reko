@@ -24,7 +24,7 @@ export default async function LoginPage({
         <Logo />
       </div>
 
-      <Card className="w-full max-w-sm p-8 shadow-2xl shadow-black/30">
+      <Card className="animate-in w-full max-w-sm p-8 shadow-lg">
         <h1 className="text-xl font-bold">Entrar na gestão</h1>
         <p className="mb-6 mt-1 text-sm text-fg-lo">
           Acesso para gestores e administradores.

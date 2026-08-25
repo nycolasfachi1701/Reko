@@ -3,31 +3,34 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   Tokens de design Nstech (SPEC §8.1 / §8.2)
-   Fonte da paleta: index.html do portal CIOT ANTT (marca Nstech).
-   Troca de marca/tema = editar SÓ este bloco.
+   Design system Reko (Nstech) — SPEC §8.1 / §8.2
+   Tokens em CSS custom properties: trocar marca/tema = editar só este bloco.
+   Peso visual vem de ELEVAÇÃO + bordas translúcidas (não de linhas sólidas).
    Tema escuro é o principal; tema claro disponível via [data-theme="light"].
    ========================================================================== */
 :root {
-  /* Marca — é ACENTO (ação primária, estado ativo, linha principal de gráfico) */
+  /* Marca — ACENTO (ação primária, estado ativo, linha principal de gráfico) */
   --brand: #ff6600;
-  --brand-strong: #cc5200; /* hover / pressed */
+  --brand-strong: #e65a00; /* hover / pressed */
   --brand-soft: rgba(255, 102, 0, 0.12); /* fundo tonal */
+  --brand-ring: rgba(255, 102, 0, 0.35);
 
-  /* Superfícies (tema escuro) */
-  --surface-0: #111111; /* fundo da página */
-  --surface-1: #1c1c1c; /* card */
-  --surface-2: #242424; /* card elevado / popover */
+  /* Superfícies (tema escuro) — profundidade em vez de bordas duras */
+  --surface-0: #0d0d0f; /* fundo da página */
+  --surface-1: #151519; /* card */
+  --surface-2: #1c1c21; /* card elevado */
+  --surface-3: #26262d; /* popover / hover */
 
-  /* Texto e bordas */
-  --text-hi: #e8e8e8;
-  --text-lo: #a1a1aa;
-  --border: #333333;
+  /* Texto e bordas (bordas translúcidas = mais leve) */
+  --text-hi: #f3f3f5;
+  --text-lo: #9b9ba6;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
 
   /* Semânticas */
-  --positive: #22c55e;
-  --warning: #f59e0b;
-  --negative: #ef4444;
+  --positive: #2dd4a7;
+  --warning: #f5a623;
+  --negative: #f4585e;
 
   /* Escala tipográfica */
   --text-xs: 0.75rem;
@@ -37,21 +40,37 @@
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
   --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
 
-  /* Raio único para todo o produto */
-  --radius: 10px;
+  /* Raio */
+  --radius: 14px;
+  --radius-sm: 8px;
+
+  /* Elevação (sutil no escuro) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.6);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 200ms;
 
   color-scheme: dark;
 }
 
 [data-theme="light"] {
-  --surface-0: #ffffff;
-  --surface-1: #f6f6f7;
-  --surface-2: #ececee;
-  --text-hi: #18181b;
-  --text-lo: #52525b;
-  --border: #e2e2e5;
   --brand-soft: rgba(255, 102, 0, 0.1);
+  --surface-0: #fbfbfc;
+  --surface-1: #ffffff;
+  --surface-2: #f4f4f6;
+  --surface-3: #ececef;
+  --text-hi: #17171b;
+  --text-lo: #5c5c68;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 18px 40px -12px rgba(0, 0, 0, 0.18);
   color-scheme: light;
 }
 
@@ -60,19 +79,31 @@
     border-color: var(--border);
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    /* brilho de marca bem sutil no topo — acento, não plano de fundo */
     background-color: var(--surface-0);
-    background-image: radial-gradient(
-      60rem 30rem at 50% -8rem,
-      var(--brand-soft),
-      transparent 70%
-    );
-    background-repeat: no-repeat;
-    background-attachment: fixed;
     color: var(--text-hi);
     font-family: var(--font-sans), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Brilho de marca no topo, via camada fixa composta (não repinta no scroll). */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 40rem;
+    background: radial-gradient(
+      55rem 26rem at 50% -10rem,
+      var(--brand-soft),
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
   }
 
   ::selection {
@@ -80,32 +111,92 @@
     color: #111;
   }
 
-  /* Números sempre com largura tabular (SPEC §8.2) */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
   }
 
-  /* Foco visível e bonito em tudo navegável por teclado (SPEC §8.3 / §9) */
+  h1,
+  h2 {
+    letter-spacing: -0.015em;
+  }
+
   :focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
-    border-radius: calc(var(--radius) - 4px);
+    border-radius: var(--radius-sm);
   }
 }
 
-/* Transições padrão do produto: 150–250ms, só transform/opacity (SPEC §8.3).
-   Respeita prefers-reduced-motion desligando movimento. */
+/* ---------- Motion utilities (só transform/opacity) ---------- */
+@keyframes reko-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes reko-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-in {
+  animation: reko-in 0.45s var(--ease) both;
+}
+
+/* Elevação com leve subida no hover — leveza e resposta imediata. */
+.lift {
+  transition:
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
+}
+
+/* Skeleton com brilho passando (mais vivo que um pulse). */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: reko-shimmer 1.4s infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
-
+  .lift:hover {
+    transform: none;
+  }
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
