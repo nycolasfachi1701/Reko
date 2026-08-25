@@ -15,13 +15,15 @@ const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 export function VideoPlayer({
   src,
+  hlsSrc,
   poster,
   title,
   videoId,
   startAt = 0,
   retention,
 }: {
-  src: string;
+  src: string; // mp4 (fallback)
+  hlsSrc?: string | null; // master.m3u8 (adaptive), quando transcodificado
   poster: string | null;
   title: string;
   videoId: string;
@@ -30,6 +32,41 @@ export function VideoPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   useViewTelemetry(videoRef, videoId);
+
+  // Fonte: HLS (adaptive) via hls.js, HLS nativo (Safari) ou mp4 (fallback).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (!hlsSrc) {
+      v.src = src;
+      return;
+    }
+    if (v.canPlayType("application/vnd.apple.mpegurl")) {
+      v.src = hlsSrc; // Safari/iOS: HLS nativo
+      return;
+    }
+    let destroyed = false;
+    let hls: { destroy: () => void } | null = null;
+    import("hls.js")
+      .then(({ default: Hls }) => {
+        if (destroyed) return;
+        if (Hls.isSupported()) {
+          const instance = new Hls({ enableWorker: true });
+          instance.loadSource(hlsSrc);
+          instance.attachMedia(v);
+          hls = instance;
+        } else {
+          v.src = src; // sem MSE: cai para mp4
+        }
+      })
+      .catch(() => {
+        v.src = src;
+      });
+    return () => {
+      destroyed = true;
+      hls?.destroy();
+    };
+  }, [hlsSrc, src]);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -178,7 +215,6 @@ export function VideoPlayer({
     >
       <video
         ref={videoRef}
-        src={src}
         poster={poster ?? undefined}
         playsInline
         className="h-full w-full"

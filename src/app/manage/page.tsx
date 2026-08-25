@@ -3,7 +3,7 @@ import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { dashboardStats } from "@/lib/analytics-data";
 import { variation } from "@/lib/analytics";
-import { formatViews, formatWatchTime } from "@/lib/format";
+import { formatViews } from "@/lib/format";
 import { Card } from "@/components/ui";
 import { Counter } from "@/components/counter";
 import { ManageHeader } from "./manage-header";
@@ -34,7 +34,7 @@ function KpiCard({
 }: {
   label: string;
   value: number;
-  format?: (n: number) => string;
+  format?: "number" | "watchTime" | "percent";
   variationValue: number | null;
   delay?: number;
 }) {
@@ -101,14 +101,14 @@ export default async function DashboardPage({
           <KpiCard
             label="Tempo assistido"
             value={c.watchedSec}
-            format={formatWatchTime}
+            format="watchTime"
             variationValue={variation(c.watchedSec, p.watchedSec)}
             delay={60}
           />
           <KpiCard
             label="Taxa de conclusão"
             value={Math.round(c.completionRate * 100)}
-            format={(n) => `${n}%`}
+            format="percent"
             variationValue={variation(c.completionRate, p.completionRate)}
             delay={120}
           />

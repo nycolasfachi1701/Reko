@@ -1,6 +1,6 @@
 "use server";
 
-import { unlink } from "node:fs/promises";
+import { rm, unlink } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { Role, VideoStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -48,6 +48,10 @@ export async function deleteVideo(id: string): Promise<void> {
     const keys = [video.storageKey, `thumbs/${stem}.jpg`];
     await Promise.all(
       keys.map((k) => unlink(resolveKeyPath(k)).catch(() => {})),
+    );
+    // pasta HLS transcodificada
+    await rm(resolveKeyPath(`hls/${id}`), { recursive: true, force: true }).catch(
+      () => {},
     );
   }
 

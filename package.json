@@ -23,6 +23,7 @@
     "@node-rs/argon2": "^2.1.0",
     "@prisma/client": "^6.2.1",
     "clsx": "^2.1.1",
+    "hls.js": "^1.7.1",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

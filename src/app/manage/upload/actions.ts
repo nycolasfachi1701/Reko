@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { Role, VideoStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth/require-role";
 import {
@@ -10,6 +11,7 @@ import {
   buildKey,
   ALLOWED_VIDEO_TYPES,
 } from "@/lib/storage";
+import { transcodeToHls } from "@/lib/transcode/hls";
 
 export interface PreparedUpload {
   id: string;
@@ -78,6 +80,11 @@ export async function finalizeVideo(
     ),
   ).slice(0, 12);
 
+  const canTranscode = process.env.STORAGE_DRIVER !== "r2";
+  const finalStatus = input.publish
+    ? VideoStatus.PUBLISHED
+    : VideoStatus.DRAFT;
+
   const video = await db.video.create({
     data: {
       title,
@@ -85,14 +92,42 @@ export async function finalizeVideo(
       storageKey: input.videoKey,
       thumbnailUrl: input.thumbKey ? storage.playbackUrl(input.thumbKey) : null,
       durationSec: Math.max(0, Math.round(input.durationSec)),
-      status: input.publish ? VideoStatus.PUBLISHED : VideoStatus.DRAFT,
-      publishedAt: input.publish ? new Date() : null,
+      // Enquanto transcodifica fica PROCESSING; sem transcode vai direto.
+      status: canTranscode ? VideoStatus.PROCESSING : finalStatus,
+      publishedAt: canTranscode ? null : input.publish ? new Date() : null,
       uploadedById: user.id,
       targetViews: input.targetViews ?? null,
       expectedCompletionRate: input.expectedCompletionRate ?? null,
       tags: { create: tags.map((tag) => ({ tag })) },
     },
   });
+
+  if (canTranscode) {
+    // Transcodifica em background após a resposta (dev). Em prod: worker/fila.
+    after(async () => {
+      try {
+        const hlsKey = await transcodeToHls(video.id, input.videoKey);
+        await db.video.update({
+          where: { id: video.id },
+          data: {
+            hlsKey,
+            status: finalStatus,
+            publishedAt: input.publish ? new Date() : null,
+          },
+        });
+      } catch (err) {
+        console.error(`Transcodificação falhou (${video.id}):`, err);
+        // Fallback: publica/rascunha com o mp4 original (sem HLS).
+        await db.video.update({
+          where: { id: video.id },
+          data: {
+            status: finalStatus,
+            publishedAt: input.publish ? new Date() : null,
+          },
+        });
+      }
+    });
+  }
 
   revalidatePath("/manage/videos");
   return { id: video.id };

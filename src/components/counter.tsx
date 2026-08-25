@@ -1,16 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatWatchTime } from "@/lib/format";
+
+// Formatos são passados por CHAVE (string) — não dá para passar função de um
+// Server Component para um Client Component.
+type FormatKey = "number" | "watchTime" | "percent";
+
+function render(n: number, format: FormatKey): string {
+  if (format === "watchTime") return formatWatchTime(n);
+  if (format === "percent") return `${n}%`;
+  return n.toLocaleString("pt-BR");
+}
 
 /** Número que interpola ao montar (SPEC §8.3: contadores que não saltam). */
 export function Counter({
   value,
-  format,
+  format = "number",
   className,
   duration = 700,
 }: {
   value: number;
-  format?: (n: number) => string;
+  format?: FormatKey;
   className?: string;
   duration?: number;
 }) {
@@ -26,12 +37,11 @@ export function Counter({
       return;
     }
     let start: number | null = null;
-    const from = 0;
     const step = (now: number) => {
       if (start === null) start = now;
       const t = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(from + (value - from) * eased));
+      setDisplay(Math.round(value * eased));
       if (t < 1) raf.current = requestAnimationFrame(step);
     };
     raf.current = requestAnimationFrame(step);
@@ -40,9 +50,5 @@ export function Counter({
     };
   }, [value, duration]);
 
-  return (
-    <span className={className}>
-      {format ? format(display) : display.toLocaleString("pt-BR")}
-    </span>
-  );
+  return <span className={className}>{render(display, format)}</span>;
 }

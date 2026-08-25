@@ -80,7 +80,8 @@ model Video {
   id                      String      @id @default(cuid())
   title                   String
   description             String      @db.Text
-  storageKey              String
+  storageKey              String      // arquivo original enviado
+  hlsKey                  String?     // playlist master HLS (quando transcodificado)
   thumbnailUrl            String?
   durationSec             Int
   status                  VideoStatus @default(DRAFT)
