@@ -1,28 +1,12 @@
 import Link from "next/link";
-import { Role, VideoStatus } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
 import { Button, Card } from "@/components/ui";
+import { StatusBadge } from "@/components/status-badge";
 import { formatDuration } from "@/lib/utils";
 import { ManageHeader } from "../manage-header";
 import { VideoRowActions } from "./video-row-actions";
-
-const STATUS: Record<VideoStatus, { label: string; dot: string }> = {
-  DRAFT: { label: "Rascunho", dot: "bg-fg-lo" },
-  PROCESSING: { label: "Processando", dot: "bg-warning" },
-  PUBLISHED: { label: "Publicado", dot: "bg-positive" },
-  ARCHIVED: { label: "Arquivado", dot: "bg-fg-lo" },
-};
-
-function StatusBadge({ status }: { status: VideoStatus }) {
-  const s = STATUS[status];
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-fg-hi">
-      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} aria-hidden />
-      {s.label}
-    </span>
-  );
-}
 
 export default async function VideosPage() {
   const user = await requireRole([Role.MANAGER, Role.ADMIN]);
@@ -84,7 +68,7 @@ export default async function VideosPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <Link
-                      href={`/manage/videos/${v.id}/edit`}
+                      href={`/manage/videos/${v.id}`}
                       className="truncate font-medium hover:text-brand"
                     >
                       {v.title}

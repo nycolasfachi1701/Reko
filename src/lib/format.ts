@@ -33,3 +33,18 @@ export function formatViews(n: number): string {
     ? "1 visualização"
     : `${n.toLocaleString("pt-BR")} visualizações`;
 }
+
+/** Tempo total assistido, compacto: "3h 12m", "12m", "45s". */
+export function formatWatchTime(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `${s}s`;
+}
+
+/** Fração 0..1 como porcentagem inteira. */
+export function formatPercent(fraction: number): string {
+  return `${Math.round(fraction * 100)}%`;
+}

@@ -1,66 +1,125 @@
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
+import { dashboardStats } from "@/lib/analytics-data";
+import { variation } from "@/lib/analytics";
+import { formatPercent, formatViews, formatWatchTime } from "@/lib/format";
 import { Card } from "@/components/ui";
 import { ManageHeader } from "./manage-header";
+import { DashboardTable } from "./dashboard-table";
 
-// Painel-placeholder da Fase 2. O painel de analytics real chega na Fase 7.
-export default async function ManageHome() {
+export const dynamic = "force-dynamic";
+
+const PERIODS = [7, 30, 90];
+
+function VariationBadge({ value }: { value: number | null }) {
+  if (value === null) {
+    return <span className="text-xs text-fg-lo">sem base</span>;
+  }
+  const up = value >= 0;
+  return (
+    <span className={`text-xs tabular-nums ${up ? "text-positive" : "text-negative"}`}>
+      {up ? "▲" : "▼"} {Math.abs(Math.round(value * 100))}%
+    </span>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  variationValue,
+}: {
+  label: string;
+  value: string;
+  variationValue: number | null;
+}) {
+  return (
+    <Card className="p-4">
+      <p className="text-sm text-fg-lo">{label}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
+      <div className="mt-1 flex items-center gap-1">
+        <VariationBadge value={variationValue} />
+        <span className="text-xs text-fg-lo">vs. período anterior</span>
+      </div>
+    </Card>
+  );
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
   const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  const { period: periodParam } = await searchParams;
+  const period = PERIODS.includes(Number(periodParam)) ? Number(periodParam) : 30;
+
+  const data = await dashboardStats(period);
+  const { current: c, previous: p } = data;
 
   return (
     <>
       <ManageHeader user={user} />
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <h1 className="text-2xl font-bold">Olá, {user.name.split(" ")[0]}</h1>
-        <p className="mt-1 text-sm text-fg-lo">
-          Bem-vindo à área de gestão da plataforma de vídeos.
-        </p>
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">Painel de desempenho</h1>
+          <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] p-1">
+            {PERIODS.map((d) => (
+              <Link
+                key={d}
+                href={`/manage?period=${d}`}
+                className={`rounded px-3 py-1 text-sm transition-colors ${
+                  d === period
+                    ? "bg-brand text-[#111]"
+                    : "text-fg-lo hover:text-fg-hi"
+                }`}
+              >
+                {d}d
+              </Link>
+            ))}
+          </div>
+        </div>
 
-        <section className="mt-8 grid gap-4 sm:grid-cols-2">
-          <Link
-            href="/manage/videos"
-            className="group rounded-lg border border-[var(--border)] bg-surface-1 p-5 transition-colors duration-200 ease-brand hover:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
-          >
-            <div className="mb-3 grid h-9 w-9 place-items-center rounded bg-[var(--brand-soft)] text-brand">
-              🎬
-            </div>
-            <h2 className="font-semibold group-hover:text-brand">Vídeos</h2>
-            <p className="mt-1 text-sm text-fg-lo">
-              Enviar, publicar, editar e arquivar vídeos.
-            </p>
-            <p className="mt-3 text-xs text-brand">Abrir →</p>
-          </Link>
-
-          <Card className="p-5">
-            <div className="mb-3 grid h-9 w-9 place-items-center rounded bg-[var(--brand-soft)] text-brand">
-              📊
-            </div>
-            <h2 className="font-semibold">Painel de desempenho</h2>
-            <p className="mt-1 text-sm text-fg-lo">
-              Visualizações, percepção e expectativa por vídeo.
-            </p>
-            <p className="mt-3 text-xs text-fg-lo">Em breve (Fase 7)</p>
-          </Card>
-
-          {user.role === Role.ADMIN ? (
-            <Link
-              href="/manage/access"
-              className="group rounded-lg border border-[var(--border)] bg-surface-1 p-5 transition-colors duration-200 ease-brand hover:border-brand focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
-            >
-              <div className="mb-3 grid h-9 w-9 place-items-center rounded bg-[var(--brand-soft)] text-brand">
-                🔗
-              </div>
-              <h2 className="font-semibold group-hover:text-brand">
-                Gerar acesso de espectador
-              </h2>
-              <p className="mt-1 text-sm text-fg-lo">
-                Crie um espectador e um link de acesso de uso único.
-              </p>
-              <p className="mt-3 text-xs text-brand">Abrir →</p>
-            </Link>
-          ) : null}
+        <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <KpiCard
+            label="Views"
+            value={c.views.toLocaleString("pt-BR")}
+            variationValue={variation(c.views, p.views)}
+          />
+          <KpiCard
+            label="Tempo assistido"
+            value={formatWatchTime(c.watchedSec)}
+            variationValue={variation(c.watchedSec, p.watchedSec)}
+          />
+          <KpiCard
+            label="Taxa de conclusão"
+            value={formatPercent(c.completionRate)}
+            variationValue={variation(c.completionRate, p.completionRate)}
+          />
+          <KpiCard
+            label="Espectadores distintos"
+            value={c.distinctViewers.toLocaleString("pt-BR")}
+            variationValue={variation(c.distinctViewers, p.distinctViewers)}
+          />
         </section>
+
+        <div className="mt-10 flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold">Vídeos</h2>
+          <a
+            href={`/api/manage/export/dashboard?period=${period}`}
+            className="text-sm text-brand hover:underline"
+          >
+            Exportar CSV
+          </a>
+        </div>
+        <Card className="mt-3 p-4">
+          <DashboardTable rows={data.videos} />
+        </Card>
+
+        <p className="mt-4 text-xs text-fg-lo">
+          Views contam sessões com pelo menos 3s assistidos. Período: últimos{" "}
+          {period} dias · {formatViews(c.views)}.
+        </p>
       </main>
     </>
   );
