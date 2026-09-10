@@ -26,45 +26,53 @@ export interface VideoStats {
 
 /** Métricas do bloco "Visualizações" de um vídeo (últimos 30 dias na série). */
 export async function videoDetailStats(videoId: string): Promise<VideoStats> {
-  const sessions = await db.viewSession.findMany({
-    where: { videoId },
-    select: {
-      userId: true,
-      startedAt: true,
-      watchedSeconds: true,
-      completed: true,
-      device: true,
-    },
-  });
-  const views = sessions.filter((s) => s.watchedSeconds >= MIN_VIEW_SECONDS);
-
-  const distinct = new Set(views.map((s) => s.userId)).size;
-  const totalWatched = views.reduce((a, s) => a + s.watchedSeconds, 0);
-  const completedCount = views.filter((s) => s.completed).length;
-
-  // série diária (30 dias)
-  const daily: { label: string; value: number }[] = [];
+  // Agrega no banco (não puxa as linhas para o JS): a "regra dos 3s" vira um
+  // filtro; contagem/soma/distintos/série/devices saem de queries agregadas.
+  const where = { videoId, watchedSeconds: { gte: MIN_VIEW_SECONDS } };
   const now = Date.now();
-  const counts = new Map<string, number>();
-  for (const s of views) counts.set(dayKey(s.startedAt), (counts.get(dayKey(s.startedAt)) ?? 0) + 1);
+  const since = new Date(now - 30 * DAY); // início da série diária
+
+  const [agg, completedCount, viewers, deviceRows, dailyRows] = await Promise.all([
+    db.viewSession.aggregate({
+      where,
+      _count: { _all: true },
+      _sum: { watchedSeconds: true },
+    }),
+    db.viewSession.count({ where: { ...where, completed: true } }),
+    db.viewSession.findMany({ where, distinct: ["userId"], select: { userId: true } }),
+    db.viewSession.groupBy({ by: ["device"], where, _count: { _all: true } }),
+    // série diária (UTC, igual a dayKey): 1 linha por dia com contagem
+    db.$queryRaw<{ day: string; n: number }[]>`
+      SELECT to_char(date_trunc('day', "startedAt"), 'YYYY-MM-DD') AS day,
+             count(*)::int AS n
+      FROM "ViewSession"
+      WHERE "videoId" = ${videoId}
+        AND "watchedSeconds" >= ${MIN_VIEW_SECONDS}
+        AND ("startedAt" AT TIME ZONE 'UTC') >= ${since}
+      GROUP BY 1
+    `,
+  ]);
+
+  const views = agg._count._all;
+  const totalWatched = agg._sum.watchedSeconds ?? 0;
+
+  const counts = new Map(dailyRows.map((r) => [r.day, Number(r.n)]));
+  const daily: { label: string; value: number }[] = [];
   for (let i = 29; i >= 0; i--) {
     const key = dayKey(new Date(now - i * DAY));
     daily.push({ label: shortLabel(key), value: counts.get(key) ?? 0 });
   }
 
-  const deviceMap = new Map<string, number>();
-  for (const s of views) deviceMap.set(s.device, (deviceMap.get(s.device) ?? 0) + 1);
-
   return {
-    views: views.length,
-    distinctViewers: distinct,
+    views,
+    distinctViewers: viewers.length,
     totalWatchedSec: totalWatched,
-    avgWatchedSec: views.length ? Math.round(totalWatched / views.length) : 0,
-    completionRate: views.length ? completedCount / views.length : 0,
+    avgWatchedSec: views ? Math.round(totalWatched / views) : 0,
+    completionRate: views ? completedCount / views : 0,
     daily,
-    devices: Array.from(deviceMap, ([device, count]) => ({ device, count })).sort(
-      (a, b) => b.count - a.count,
-    ),
+    devices: deviceRows
+      .map((d) => ({ device: d.device, count: d._count._all }))
+      .sort((a, b) => b.count - a.count),
   };
 }
 
@@ -177,60 +185,79 @@ export async function dashboardStats(periodDays: number): Promise<DashboardData>
   const start = new Date(now - periodDays * DAY);
   const prevStart = new Date(now - 2 * periodDays * DAY);
 
-  const sessions = await db.viewSession.findMany({
-    where: { startedAt: { gte: prevStart }, watchedSeconds: { gte: MIN_VIEW_SECONDS } },
-    select: {
-      videoId: true,
-      userId: true,
-      startedAt: true,
-      watchedSeconds: true,
-      completed: true,
-    },
-  });
+  // Uma varredura só de [prevStart, now): KPIs dos DOIS períodos (atual e
+  // anterior), incluindo count(distinct userId) — tudo no banco, sem puxar
+  // linha nenhuma para o JS.
+  const kpiRows = await db.$queryRaw<
+    {
+      is_current: boolean;
+      views: bigint;
+      watched: bigint | null;
+      completed: bigint;
+      viewers: bigint;
+    }[]
+  >`
+    SELECT (("startedAt" AT TIME ZONE 'UTC') >= ${start}) AS is_current,
+           count(*) AS views,
+           sum("watchedSeconds") AS watched,
+           count(*) FILTER (WHERE "completed") AS completed,
+           count(DISTINCT "userId") AS viewers
+    FROM "ViewSession"
+    WHERE ("startedAt" AT TIME ZONE 'UTC') >= ${prevStart}
+      AND "watchedSeconds" >= ${MIN_VIEW_SECONDS}
+    GROUP BY 1
+  `;
+  const toKpis = (cur: boolean): DashboardKpis => {
+    const r = kpiRows.find((x) => x.is_current === cur);
+    const views = r ? Number(r.views) : 0;
+    return {
+      views,
+      watchedSec: r ? Number(r.watched ?? 0) : 0,
+      completionRate: r && views ? Number(r.completed) / views : 0,
+      distinctViewers: r ? Number(r.viewers) : 0,
+    };
+  };
 
-  const inCurrent = sessions.filter((s) => s.startedAt >= start);
-  const inPrevious = sessions.filter((s) => s.startedAt < start);
+  // Uma varredura do período atual: views por vídeo E por dia (sparkline),
+  // como (videoId, índice-de-dia, contagem).
+  const sparkRows = await db.$queryRaw<
+    { videoId: string; dayIdx: number; n: number }[]
+  >`
+    SELECT "videoId",
+           floor(extract(epoch from (("startedAt" AT TIME ZONE 'UTC') - ${start})) / 86400)::int AS "dayIdx",
+           count(*)::int AS n
+    FROM "ViewSession"
+    WHERE ("startedAt" AT TIME ZONE 'UTC') >= ${start}
+      AND "watchedSeconds" >= ${MIN_VIEW_SECONDS}
+    GROUP BY 1, 2
+  `;
 
-  const kpis = (rows: typeof sessions): DashboardKpis => ({
-    views: rows.length,
-    watchedSec: rows.reduce((a, s) => a + s.watchedSeconds, 0),
-    completionRate: rows.length
-      ? rows.filter((s) => s.completed).length / rows.length
-      : 0,
-    distinctViewers: new Set(rows.map((s) => s.userId)).size,
-  });
-
-  // tabela de vídeos + sparkline (views/dia no período)
   const videos = await db.video.findMany({
     orderBy: { createdAt: "desc" },
     select: { id: true, title: true, status: true },
   });
 
-  const byVideoDay = new Map<string, Map<number, number>>();
   const viewsByVideo = new Map<string, number>();
-  for (const s of inCurrent) {
-    viewsByVideo.set(s.videoId, (viewsByVideo.get(s.videoId) ?? 0) + 1);
-    const dayIdx = Math.floor((s.startedAt.getTime() - start.getTime()) / DAY);
-    let m = byVideoDay.get(s.videoId);
-    if (!m) {
-      m = new Map();
-      byVideoDay.set(s.videoId, m);
+  const sparkByVideo = new Map<string, number[]>();
+  for (const r of sparkRows) {
+    const n = Number(r.n);
+    viewsByVideo.set(r.videoId, (viewsByVideo.get(r.videoId) ?? 0) + n);
+    let arr = sparkByVideo.get(r.videoId);
+    if (!arr) {
+      arr = new Array<number>(periodDays).fill(0);
+      sparkByVideo.set(r.videoId, arr);
     }
-    m.set(dayIdx, (m.get(dayIdx) ?? 0) + 1);
+    const idx = Number(r.dayIdx);
+    if (idx >= 0 && idx < periodDays) arr[idx] = n;
   }
 
-  const table = videos.map((v) => {
-    const m = byVideoDay.get(v.id);
-    const spark: number[] = [];
-    for (let i = 0; i < periodDays; i++) spark.push(m?.get(i) ?? 0);
-    return {
-      id: v.id,
-      title: v.title,
-      status: v.status,
-      views: viewsByVideo.get(v.id) ?? 0,
-      sparkline: spark,
-    };
-  });
+  const table = videos.map((v) => ({
+    id: v.id,
+    title: v.title,
+    status: v.status,
+    views: viewsByVideo.get(v.id) ?? 0,
+    sparkline: sparkByVideo.get(v.id) ?? new Array<number>(periodDays).fill(0),
+  }));
 
-  return { current: kpis(inCurrent), previous: kpis(inPrevious), videos: table };
+  return { current: toKpis(true), previous: toKpis(false), videos: table };
 }
