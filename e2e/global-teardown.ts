@@ -4,11 +4,7 @@ import * as F from "./fixtures";
 export default async function globalTeardown() {
   const users = [F.VIEWER_USER_ID, F.MANAGER_USER_ID];
 
-  // Ordem respeitando FKs sem cascade: tokens (createdById) e vídeos
-  // (uploadedById) antes dos usuários.
-  await prisma.accessToken.deleteMany({
-    where: { OR: [{ userId: { in: users } }, { createdById: { in: users } }] },
-  });
+  // Ordem respeitando FKs sem cascade: vídeos (uploadedById) antes dos usuários.
   await prisma.video.deleteMany({
     where: { id: { in: [F.PUBLISHED_VIDEO_ID, F.DRAFT_VIDEO_ID] } },
   });

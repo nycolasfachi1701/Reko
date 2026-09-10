@@ -1,44 +1,57 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { db } from "@/lib/db";
 import { destroyCurrentSession } from "@/lib/auth/session";
 import { requireRole } from "@/lib/auth/require-role";
-import { createAccessToken, accessLink } from "@/lib/auth/access-token";
+import { hashPassword } from "@/lib/auth/password";
 
 export async function logoutAction(): Promise<void> {
   await destroyCurrentSession();
   redirect("/login");
 }
 
-export interface CreateLinkState {
-  link?: string;
-  expiresAt?: string;
+export interface CreateUserState {
+  ok?: string;
   error?: string;
 }
 
-/** Admin cria um espectador e gera um link de acesso de uso único (SPEC §4.1). */
-export async function createViewerAndLinkAction(
-  _prev: CreateLinkState,
+const ROLES = [Role.VIEWER, Role.MANAGER, Role.ADMIN];
+
+/** Admin cria um usuário com e-mail e senha (SPEC §3 — criação de usuários). */
+export async function createUserAction(
+  _prev: CreateUserState,
   formData: FormData,
-): Promise<CreateLinkState> {
-  const admin = await requireRole([Role.ADMIN]);
+): Promise<CreateUserState> {
+  await requireRole([Role.ADMIN]);
 
   const name = String(formData.get("name") ?? "").trim();
-  if (name.length < 2) {
-    return { error: "Informe o nome do espectador." };
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const roleRaw = String(formData.get("role") ?? "VIEWER");
+  const role = (ROLES as string[]).includes(roleRaw)
+    ? (roleRaw as Role)
+    : Role.VIEWER;
+
+  if (name.length < 2) return { error: "Informe o nome." };
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { error: "Informe um e-mail válido." };
+  }
+  if (password.length < 8) {
+    return { error: "A senha deve ter ao menos 8 caracteres." };
   }
 
-  const viewer = await db.user.create({
-    data: { name, role: Role.VIEWER },
-  });
+  try {
+    await db.user.create({
+      data: { name, email, role, passwordHash: await hashPassword(password) },
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return { error: "Já existe um usuário com esse e-mail." };
+    }
+    throw e;
+  }
 
-  const { token, expiresAt } = await createAccessToken(viewer.id, admin.id);
-
-  // O token só existe aqui, uma vez, para montar o link. Nunca é logado.
-  return {
-    link: accessLink(token),
-    expiresAt: expiresAt.toISOString(),
-  };
+  return { ok: `Usuário ${name} criado.` };
 }

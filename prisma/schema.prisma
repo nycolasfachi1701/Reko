@@ -31,36 +31,20 @@ enum VoteValue {
 model User {
   id           String    @id @default(cuid())
   name         String
-  email        String?   @unique // nullable para o espectador (entra por link)
-  passwordHash String? // só gestores/admins têm senha
+  email        String?   @unique // todo usuário entra com e-mail+senha; nullable só por compat. de dados legados
+  passwordHash String? // hash Argon2id da senha
   role         Role      @default(VIEWER)
   avatarUrl    String?
   createdAt    DateTime  @default(now())
   lastSeenAt   DateTime?
 
   // relações
-  accessTokens  AccessToken[] @relation("TokenOwner")
-  createdTokens AccessToken[] @relation("TokenCreator")
-  sessions      Session[]
-  videos        Video[] // vídeos que este usuário subiu
-  viewSessions  ViewSession[]
-  votes         Vote[]
-  reactions     Reaction[]
-  comments      Comment[]
-}
-
-model AccessToken {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation("TokenOwner", fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash   String    @unique // SHA-256 do token; nunca guardamos o texto puro
-  expiresAt   DateTime
-  usedAt      DateTime? // uso único
-  createdById String
-  createdBy   User      @relation("TokenCreator", fields: [createdById], references: [id])
-  createdAt   DateTime  @default(now())
-
-  @@index([userId])
+  sessions     Session[]
+  videos       Video[] // vídeos que este usuário subiu
+  viewSessions ViewSession[]
+  votes        Vote[]
+  reactions    Reaction[]
+  comments     Comment[]
 }
 
 model Session {

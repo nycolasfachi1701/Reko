@@ -20,9 +20,10 @@ export interface LoginState {
   error?: string;
 }
 
-function safeNext(next: FormDataEntryValue | null): string {
+// Destino pós-login por papel; evita open redirect.
+function destinationFor(role: Role, next: FormDataEntryValue | null): string {
+  if (role === Role.VIEWER) return "/";
   const value = typeof next === "string" ? next : "";
-  // evita open redirect: só caminhos internos da área de gestão
   return value.startsWith("/manage") ? value : "/manage";
 }
 
@@ -32,13 +33,11 @@ export async function loginAction(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const next = safeNext(formData.get("next"));
 
   if (!email || !password) {
     return { error: GENERIC_ERROR };
   }
 
-  // Rate limit por e-mail (SPEC §4.2 — 5 tentativas / 15 min).
   const limit = rateLimit(`login:${email}`, 5, 15 * 60);
   if (!limit.ok) {
     return {
@@ -49,16 +48,11 @@ export async function loginAction(
   }
 
   const user = await db.user.findUnique({ where: { email } });
-  const isManager =
-    user?.role === Role.MANAGER || user?.role === Role.ADMIN;
 
   // Sempre roda uma verificação (real ou dummy) para equalizar o tempo.
-  const ok = await verifyPassword(
-    user?.passwordHash && isManager ? user.passwordHash : DUMMY_HASH,
-    password,
-  );
+  const ok = await verifyPassword(user?.passwordHash ?? DUMMY_HASH, password);
 
-  if (!user || !isManager || !user.passwordHash || !ok) {
+  if (!user || !user.passwordHash || !ok) {
     return { error: GENERIC_ERROR };
   }
 
@@ -68,5 +62,5 @@ export async function loginAction(
     ip: getClientIp(headerStore),
   });
 
-  redirect(next);
+  redirect(destinationFor(user.role, formData.get("next")));
 }

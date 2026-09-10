@@ -1,4 +1,4 @@
-// Rate limit de janela fixa, em memória (SPEC §4.1 /enter e §4.2 login).
+// Rate limit de janela fixa, em memória (SPEC §4.2 — login).
 //
 // ⚠️ Limitação: o store é por instância do processo. No dev e num único
 // container isso basta (SPEC decisão #4: até 500 usuários). Em deploy

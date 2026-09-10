@@ -2,16 +2,14 @@ import { test, expect } from "@playwright/test";
 import { prisma } from "./db";
 import * as F from "./fixtures";
 
-// Fluxo (a): espectador entra por link, abre o vídeo e a visualização é
-// registrada. (Interações saíram do escopo — o espectador só assiste.)
-test("espectador entra por link e a visualização é registrada", async ({ page }) => {
-  // reaproveita o token (uso único) para o caso de re-execução
-  await prisma.accessToken.update({
-    where: { id: F.VIEWER_TOKEN_ID },
-    data: { usedAt: null },
-  });
-
-  await page.goto(`/enter/${F.VIEWER_RAW_TOKEN}`);
+// Fluxo (a): espectador faz login com e-mail+senha, cai no feed, abre o vídeo
+// e a visualização é registrada. (Interações saíram do escopo — só assiste.)
+test("espectador loga, abre o vídeo e a visualização é registrada", async ({ page }) => {
+  // login do espectador
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill(F.VIEWER_EMAIL);
+  await page.getByLabel("Senha").fill(F.VIEWER_PASSWORD);
+  await page.getByRole("button", { name: "Entrar" }).click();
 
   // caiu no feed do espectador (marca visível no topo)
   await expect(

@@ -24,7 +24,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ key: string[] }> },
 ) {
-  const user = await getCurrentUser();
+  // touch:false — requisições de mídia são frequentes; não renovar sessão aqui.
+  const user = await getCurrentUser({ touch: false });
   if (!user) return new Response("Não autorizado", { status: 401 });
 
   const { key } = await params;

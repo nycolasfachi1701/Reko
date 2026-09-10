@@ -72,7 +72,9 @@ async function readValidatedToken(): Promise<string | null> {
  * assinatura → busca sessão por hash → checa expiração. Em atividade,
  * atualiza lastSeenAt e faz sliding renewal (SPEC §4.2), no máx. 1x/min.
  */
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(
+  opts: { touch?: boolean } = {},
+): Promise<User | null> {
   const token = await readValidatedToken();
   if (!token) return null;
 
@@ -88,10 +90,13 @@ export async function getCurrentUser(): Promise<User | null> {
     return null;
   }
 
+  // Atualiza lastSeenAt + sliding renewal (SPEC §4.2), no máx. 1x/min.
+  // Não bloqueia a resposta (fire-and-forget) e é pulável em requisições de
+  // alta frequência (mídia/thumbnails) via { touch: false }.
   const lastSeen = session.user.lastSeenAt?.getTime() ?? 0;
-  if (now - lastSeen > 60_000) {
+  if (opts.touch !== false && now - lastSeen > 60_000) {
     const ttl = ttlSecondsForRole(session.user.role);
-    await db
+    void db
       .$transaction([
         db.user.update({
           where: { id: session.userId },

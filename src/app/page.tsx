@@ -28,7 +28,7 @@ function Landing() {
             href="/login"
             className="rounded-sm border border-[var(--border-strong)] bg-surface-1 px-3 py-2 text-sm text-fg-lo transition-colors hover:bg-surface-2 hover:text-fg-hi"
           >
-            Área de gestão →
+            Entrar →
           </Link>
         </div>
       </header>
@@ -40,8 +40,8 @@ function Landing() {
           Assista aos vídeos da sua equipe, sem complicação.
         </h1>
         <p className="mt-5 max-w-xl text-lg text-fg-lo">
-          O acesso é por um link enviado pela sua equipe — sem senha e sem cadastro. Já
-          tem um link? É só abri-lo.
+          Entre com o e-mail e a senha da sua conta Nstech. Ainda não tem acesso? Peça
+          uma conta ao administrador da sua equipe.
         </p>
       </main>
     </div>

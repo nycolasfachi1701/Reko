@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { hash } from "@node-rs/argon2";
 import { prisma } from "./db";
 import * as F from "./fixtures";
@@ -6,6 +5,7 @@ import * as F from "./fixtures";
 // Cria fixtures determinísticas para os fluxos E2E (SPEC §10, Fase 9).
 export default async function globalSetup() {
   const passwordHash = await hash(F.MANAGER_PASSWORD);
+  const viewerHash = await hash(F.VIEWER_PASSWORD);
 
   const manager = await prisma.user.upsert({
     where: { id: F.MANAGER_USER_ID },
@@ -21,8 +21,14 @@ export default async function globalSetup() {
 
   await prisma.user.upsert({
     where: { id: F.VIEWER_USER_ID },
-    update: { role: "VIEWER", name: "E2E Espectador" },
-    create: { id: F.VIEWER_USER_ID, role: "VIEWER", name: "E2E Espectador" },
+    update: { role: "VIEWER", name: "E2E Espectador", email: F.VIEWER_EMAIL, passwordHash: viewerHash },
+    create: {
+      id: F.VIEWER_USER_ID,
+      role: "VIEWER",
+      name: "E2E Espectador",
+      email: F.VIEWER_EMAIL,
+      passwordHash: viewerHash,
+    },
   });
 
   await prisma.video.upsert({
@@ -51,19 +57,6 @@ export default async function globalSetup() {
       durationSec: 60,
       status: "DRAFT",
       uploadedById: manager.id,
-    },
-  });
-
-  const tokenHash = createHash("sha256").update(F.VIEWER_RAW_TOKEN).digest("hex");
-  await prisma.accessToken.upsert({
-    where: { id: F.VIEWER_TOKEN_ID },
-    update: { tokenHash, usedAt: null, expiresAt: new Date(Date.now() + 86400000), userId: F.VIEWER_USER_ID },
-    create: {
-      id: F.VIEWER_TOKEN_ID,
-      tokenHash,
-      expiresAt: new Date(Date.now() + 86400000),
-      userId: F.VIEWER_USER_ID,
-      createdById: manager.id,
     },
   });
 

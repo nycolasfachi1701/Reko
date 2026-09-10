@@ -1,6 +1,6 @@
 # Reko — plataforma de vídeos da Nstech
 
-**Reko** é a plataforma interna de vídeos da Nstech, com dois papéis: **espectador** (entra por link e assiste — sem conta, apenas visualização) e **gestor** (faz login, publica e analisa o desempenho). Construída fase a fase a partir de `SPEC.md`.
+**Reko** é a plataforma interna de vídeos da Nstech. Todo usuário entra com **e-mail e senha**; o que muda é o papel: **espectador** (assiste ao feed), **gestor** (publica e analisa o desempenho) e **administrador** (cria contas, além do que o gestor faz). Contas são criadas pelo administrador em *Gestão → Usuários*. Construída fase a fase a partir de `SPEC.md`.
 
 ## Stack
 
@@ -20,10 +20,12 @@ npm run dev            # http://localhost:3000
 
 ### Credenciais de desenvolvimento
 
-O seed cria um admin para testes locais:
+O seed cria um admin e dois espectadores para testes locais:
 
-- **E-mail:** `nycolas.fachi@nstech.com.br`
-- **Senha:** `admin1234` (somente dev — troque em produção)
+- **Admin —** e-mail `nycolas.fachi@nstech.com.br`, senha `admin1234`
+- **Espectadores —** `ana@nstech.com.br` / `bruno@nstech.com.br`, senha `viewer1234`
+
+Somente dev — troque em produção.
 
 ## Scripts
 
@@ -55,17 +57,17 @@ npm run build
 npm run test:e2e
 ```
 
-Dois fluxos: (a) espectador entra por link, abre o vídeo e a visualização é registrada; (b) gestor faz login, publica um vídeo e confere o bloco Visualizações.
+Dois fluxos: (a) espectador faz login, abre o vídeo e a visualização é registrada; (b) gestor faz login, publica um vídeo e confere o bloco Visualizações.
 
 ## Design
 
 Tokens de marca centralizados em `src/app/globals.css` — trocar a paleta é editar um único bloco. A cor da marca (`--brand`, laranja Nstech `#ff6600`) é **acento**, nunca plano de fundo. Tema escuro é o principal; tema claro disponível via `[data-theme="light"]`.
 
-## ⚠️ Aviso de segurança — acesso do espectador por link
+## Autenticação
 
-O espectador entra por um **link sem senha** (`/enter/<token>`). É conveniente e frágil ao mesmo tempo: **quem tiver o link, entra**. Mitigações já embutidas: token de uso único, com expiração (TTL padrão 7 dias), armazenado só como hash SHA-256, com rate limit e redirecionamento 302 para tirar o token da barra de endereço.
+Todo acesso é por **e-mail + senha** (Argon2id). A sessão vive num cookie httpOnly assinado; no banco guardamos só o hash do token de sessão. O login tem rate limit (5 tentativas / 15 min por e-mail) e resposta genérica para não revelar quais e-mails existem. Papéis têm TTL de sessão distinto: espectador mais longo, gestor/admin mais curto (ver `VIEWER_SESSION_TTL_DAYS` / `MANAGER_SESSION_TTL_HOURS`).
 
-Se a plataforma passar a hospedar conteúdo sensível, migrar para **link mágico enviado por e-mail** — aí o e-mail passa a ser o segundo fator.
+Contas só são criadas pelo administrador (não há auto-cadastro). Um gate de UX no middleware barra rotas `/manage` sem cookie válido; a autorização definitiva (papel + sessão no banco) é feita por `requireRole()` nas páginas e actions.
 
 ## Estrutura
 

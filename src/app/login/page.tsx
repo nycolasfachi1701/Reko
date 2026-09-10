@@ -3,6 +3,7 @@ import { Role } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth/session";
 import { Logo } from "@/components/logo";
 import { Card } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -11,31 +12,32 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const user = await getCurrentUser();
-  if (user && (user.role === Role.MANAGER || user.role === Role.ADMIN)) {
-    redirect("/manage");
-  }
+  if (user) redirect(user.role === Role.VIEWER ? "/" : "/manage");
 
   const { next } = await searchParams;
   const safeNext = next?.startsWith("/manage") ? next : "/manage";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-6 py-16">
-      <div className="mb-8">
-        <Logo />
+    <main className="relative flex min-h-screen items-center justify-center px-6 py-16">
+      <div className="absolute right-6 top-6">
+        <ThemeToggle />
       </div>
 
-      <Card className="animate-in w-full max-w-sm p-8 shadow-lg">
-        <h1 className="text-xl font-bold">Entrar na gestão</h1>
-        <p className="mb-6 mt-1 text-sm text-fg-lo">
-          Acesso para gestores e administradores.
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <Logo />
+        </div>
+        <Card className="animate-in p-8 shadow-lg">
+          <h1 className="font-display text-xl font-bold">Entrar</h1>
+          <p className="mb-6 mt-1 text-sm text-fg-lo">
+            Acesse com seu e-mail e senha.
+          </p>
+          <LoginForm next={safeNext} />
+        </Card>
+        <p className="mt-6 text-center text-xs text-fg-mut">
+          Não tem acesso? Peça uma conta ao administrador da sua equipe.
         </p>
-        <LoginForm next={safeNext} />
-      </Card>
-
-      <p className="mt-6 max-w-sm text-center text-xs text-fg-lo">
-        Espectadores entram pelo link de acesso enviado pela sua equipe — sem
-        senha.
-      </p>
+      </div>
     </main>
   );
 }
