@@ -5,14 +5,19 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getStorage } from "@/lib/storage";
 import { videoRetention } from "@/lib/analytics-data";
-import { Logo } from "@/components/logo";
 import { VideoPlayer } from "@/components/player/video-player";
 import { formatRelativeTime, formatViews } from "@/lib/format";
 import { REACTION_EMOJIS } from "./reactions";
 import { VideoInteractions } from "./video-interactions";
 import { CommentsSection, type CommentView } from "./comments-section";
+import { UpNext } from "./up-next";
 
 export const dynamic = "force-dynamic";
+
+function initials(name: string): string {
+  const p = name.trim().split(/\s+/);
+  return ((p[0]?.[0] ?? "") + (p[1]?.[0] ?? "")).toUpperCase() || "•";
+}
 
 export default async function WatchPage({
   params,
@@ -39,7 +44,7 @@ export default async function WatchPage({
   const isManager = user.role === Role.MANAGER || user.role === Role.ADMIN;
   if (video.status !== VideoStatus.PUBLISHED && !isManager) notFound();
 
-  const [views, likeCount, dislikeCount, myVote, reactionGroups, myReactions] =
+  const [views, likeCount, dislikeCount, myVote, reactionGroups, myReactions, related] =
     await Promise.all([
       db.viewSession.count({ where: { videoId: id, watchedSeconds: { gte: 3 } } }),
       db.vote.count({ where: { videoId: id, value: "LIKE" } }),
@@ -56,6 +61,18 @@ export default async function WatchPage({
       db.reaction.findMany({
         where: { videoId: id, userId: user.id },
         select: { emoji: true },
+      }),
+      db.video.findMany({
+        where: { status: VideoStatus.PUBLISHED, id: { not: id } },
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+        take: 8,
+        select: {
+          id: true,
+          title: true,
+          thumbnailUrl: true,
+          durationSec: true,
+          uploadedBy: { select: { name: true } },
+        },
       }),
     ]);
 
@@ -118,71 +135,117 @@ export default async function WatchPage({
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-[var(--border)]">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3">
-          <Link href="/" className="flex items-center gap-3">
-            <Logo showText={false} />
-            <span className="text-sm text-fg-lo">← Voltar aos vídeos</span>
+      <header className="rk-bar">
+        <div className="mx-auto flex h-[68px] max-w-6xl items-center gap-4 px-4 sm:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Reko, por Nstech">
+            <span className="rk-glyph" aria-hidden>
+              R
+            </span>
+            <span className="font-display text-[20px] font-extrabold tracking-tight">
+              Reko
+              <span className="ml-2 font-sans text-xs font-medium text-fg-mut">por Nstech</span>
+            </span>
+          </Link>
+          <Link
+            href="/"
+            className="ml-auto text-sm text-fg-lo transition-colors hover:text-fg-hi"
+          >
+            ← Voltar aos vídeos
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-6">
-        <div
-          className="lg:sticky lg:top-4"
-          style={{ viewTransitionName: `poster-${video.id}` }}
-        >
-          <VideoPlayer
-            src={src}
-            hlsSrc={hlsSrc}
-            poster={video.thumbnailUrl}
-            title={video.title}
-            videoId={video.id}
-            startAt={startAt}
-            retention={retention}
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          {/* Coluna principal */}
+          <div className="min-w-0">
+            <div
+              className="overflow-hidden rounded-2xl shadow-lg"
+              style={{ viewTransitionName: `poster-${video.id}` }}
+            >
+              <VideoPlayer
+                src={src}
+                hlsSrc={hlsSrc}
+                poster={video.thumbnailUrl}
+                title={video.title}
+                videoId={video.id}
+                startAt={startAt}
+                retention={retention}
+              />
+            </div>
+
+            {video.status !== VideoStatus.PUBLISHED ? (
+              <p className="mt-3 inline-block rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs text-brand">
+                Prévia — este vídeo ainda não está publicado.
+              </p>
+            ) : null}
+
+            <h1 className="mt-5 font-display text-2xl font-extrabold tracking-tight sm:text-[28px]">
+              {video.title}
+            </h1>
+
+            {video.tags.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {video.tags.map((t) => (
+                  <span
+                    key={t.tag}
+                    className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-xs text-fg-lo"
+                  >
+                    {t.tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            {/* Autor + ações */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
+                  style={{ background: "linear-gradient(135deg,#ff8a3d,#ff5a00)" }}
+                  aria-hidden
+                >
+                  {initials(video.uploadedBy.name)}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-fg-hi">
+                    {video.uploadedBy.name}
+                  </p>
+                  <p className="text-xs text-fg-mut tabular-nums">
+                    {formatViews(views)} · {formatRelativeTime(publishedAt)}
+                  </p>
+                </div>
+              </div>
+
+              <VideoInteractions
+                videoId={video.id}
+                like={likeCount}
+                dislike={dislikeCount}
+                myVote={myVote?.value ?? null}
+                reactions={reactions}
+              />
+            </div>
+
+            {video.description ? (
+              <div className="rk-glass mt-5 whitespace-pre-wrap rounded-xl p-4 text-sm leading-relaxed text-fg-hi">
+                {video.description}
+              </div>
+            ) : null}
+
+            <CommentsSection videoId={video.id} comments={roots} />
+          </div>
+
+          {/* Coluna lateral: A seguir */}
+          <UpNext
+            videos={related.map((v) => ({
+              id: v.id,
+              title: v.title,
+              thumbnailUrl: v.thumbnailUrl,
+              durationSec: v.durationSec,
+              uploaderName: v.uploadedBy.name,
+            }))}
           />
         </div>
-
-        {video.status !== VideoStatus.PUBLISHED ? (
-          <p className="mt-3 inline-block rounded bg-[var(--brand-soft)] px-2 py-1 text-xs text-brand">
-            Prévia — este vídeo ainda não está publicado.
-          </p>
-        ) : null}
-
-        <h1 className="mt-4 text-xl font-bold sm:text-2xl">{video.title}</h1>
-        <p className="mt-1 text-sm text-fg-lo tabular-nums">
-          {formatViews(views)} · {formatRelativeTime(publishedAt)} ·{" "}
-          {video.uploadedBy.name}
-        </p>
-
-        <VideoInteractions
-          videoId={video.id}
-          like={likeCount}
-          dislike={dislikeCount}
-          myVote={myVote?.value ?? null}
-          reactions={reactions}
-        />
-
-        {video.tags.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {video.tags.map((t) => (
-              <span
-                key={t.tag}
-                className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-fg-lo"
-              >
-                {t.tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        {video.description ? (
-          <div className="mt-4 whitespace-pre-wrap rounded-lg border border-[var(--border)] bg-surface-1 p-4 text-sm leading-relaxed text-fg-hi">
-            {video.description}
-          </div>
-        ) : null}
-
-        <CommentsSection videoId={video.id} comments={roots} />
       </main>
     </div>
   );
