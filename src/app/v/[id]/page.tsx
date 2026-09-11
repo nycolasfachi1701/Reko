@@ -8,6 +8,9 @@ import { videoRetention } from "@/lib/analytics-data";
 import { Logo } from "@/components/logo";
 import { VideoPlayer } from "@/components/player/video-player";
 import { formatRelativeTime, formatViews } from "@/lib/format";
+import { REACTION_EMOJIS } from "./reactions";
+import { VideoInteractions } from "./video-interactions";
+import { CommentsSection, type CommentView } from "./comments-section";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +36,72 @@ export default async function WatchPage({
   });
   if (!video) notFound();
 
-  const views = await db.viewSession.count({
-    where: { videoId: id, watchedSeconds: { gte: 3 } },
-  });
-
   const isManager = user.role === Role.MANAGER || user.role === Role.ADMIN;
   if (video.status !== VideoStatus.PUBLISHED && !isManager) notFound();
+
+  const [views, likeCount, dislikeCount, myVote, reactionGroups, myReactions] =
+    await Promise.all([
+      db.viewSession.count({ where: { videoId: id, watchedSeconds: { gte: 3 } } }),
+      db.vote.count({ where: { videoId: id, value: "LIKE" } }),
+      db.vote.count({ where: { videoId: id, value: "DISLIKE" } }),
+      db.vote.findUnique({
+        where: { videoId_userId: { videoId: id, userId: user.id } },
+        select: { value: true },
+      }),
+      db.reaction.groupBy({
+        by: ["emoji"],
+        where: { videoId: id },
+        _count: { _all: true },
+      }),
+      db.reaction.findMany({
+        where: { videoId: id, userId: user.id },
+        select: { emoji: true },
+      }),
+    ]);
+
+  const reactionCounts = new Map(reactionGroups.map((g) => [g.emoji, g._count._all]));
+  const mineSet = new Set(myReactions.map((r) => r.emoji));
+  const reactions = REACTION_EMOJIS.map((emoji) => ({
+    emoji,
+    count: reactionCounts.get(emoji) ?? 0,
+    mine: mineSet.has(emoji),
+  }));
+
+  // Comentários (1 nível de resposta): monta a árvore raiz → respostas.
+  const commentRows = await db.comment.findMany({
+    where: { videoId: id },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      body: true,
+      createdAt: true,
+      deletedAt: true,
+      parentId: true,
+      userId: true,
+      user: { select: { name: true } },
+    },
+  });
+  const toView = (c: (typeof commentRows)[number]): CommentView => ({
+    id: c.id,
+    authorName: c.user.name,
+    body: c.body,
+    createdAt: c.createdAt.toISOString(),
+    deleted: c.deletedAt != null,
+    canDelete: c.deletedAt == null && (c.userId === user.id || isManager),
+    replies: [],
+  });
+  const roots: CommentView[] = [];
+  const byId = new Map<string, CommentView>();
+  for (const c of commentRows) {
+    if (c.parentId == null) {
+      const v = toView(c);
+      byId.set(c.id, v);
+      roots.push(v);
+    }
+  }
+  for (const c of commentRows) {
+    if (c.parentId != null) byId.get(c.parentId)?.replies.push(toView(c));
+  }
 
   const storage = getStorage();
   const src = storage.playbackUrl(video.storageKey);
@@ -92,6 +155,14 @@ export default async function WatchPage({
           {video.uploadedBy.name}
         </p>
 
+        <VideoInteractions
+          videoId={video.id}
+          like={likeCount}
+          dislike={dislikeCount}
+          myVote={myVote?.value ?? null}
+          reactions={reactions}
+        />
+
         {video.tags.length > 0 ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {video.tags.map((t) => (
@@ -110,6 +181,8 @@ export default async function WatchPage({
             {video.description}
           </div>
         ) : null}
+
+        <CommentsSection videoId={video.id} comments={roots} />
       </main>
     </div>
   );

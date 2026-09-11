@@ -199,6 +199,14 @@
   backdrop-filter: saturate(1.4) blur(14px);
   border-bottom: 1px solid var(--border);
 }
+/* Superfície "glass" reutilizável (frosted): fundo translúcido + blur. */
+.rk-glass {
+  background: color-mix(in srgb, var(--surface-1) 66%, transparent);
+  backdrop-filter: saturate(1.3) blur(12px);
+  -webkit-backdrop-filter: saturate(1.3) blur(12px);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 75%, transparent);
+  box-shadow: var(--shadow-sm);
+}
 .rk-glyph {
   width: 34px;
   height: 34px;
