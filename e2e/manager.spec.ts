@@ -36,4 +36,8 @@ test("gestor loga, publica vídeo e confere as métricas", async ({ page }) => {
   // e que de fato ficou publicado no banco
   const v = await prisma.video.findUnique({ where: { id: F.DRAFT_VIDEO_ID } });
   expect(v?.status).toBe("PUBLISHED");
+
+  // publicar invalida o cache do feed (revalidateTag): já aparece na home
+  await page.goto("/");
+  await expect(page.getByText(F.DRAFT_VIDEO_TITLE).first()).toBeVisible();
 });

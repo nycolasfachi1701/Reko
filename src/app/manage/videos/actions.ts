@@ -3,13 +3,19 @@
 import { rm, unlink } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { Role, VideoStatus } from "@prisma/client";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth/require-role";
 import { resolveKeyPath } from "@/lib/storage/local-fs";
 
 async function assertManager() {
   return requireRole([Role.MANAGER, Role.ADMIN]);
+}
+
+// Atualiza a listagem de gestão e invalida o cache do feed do espectador.
+function revalidateCatalog(): void {
+  revalidatePath("/manage/videos");
+  revalidateTag("feed");
 }
 
 export async function publishVideo(id: string): Promise<void> {
@@ -23,7 +29,7 @@ export async function publishVideo(id: string): Promise<void> {
       publishedAt: video.publishedAt ?? new Date(),
     },
   });
-  revalidatePath("/manage/videos");
+  revalidateCatalog();
 }
 
 export async function archiveVideo(id: string): Promise<void> {
@@ -32,7 +38,7 @@ export async function archiveVideo(id: string): Promise<void> {
     where: { id },
     data: { status: VideoStatus.ARCHIVED },
   });
-  revalidatePath("/manage/videos");
+  revalidateCatalog();
 }
 
 export async function deleteVideo(id: string): Promise<void> {
@@ -41,6 +47,7 @@ export async function deleteVideo(id: string): Promise<void> {
   if (!video) return;
 
   await db.video.delete({ where: { id } });
+  revalidateTag("feed");
 
   // Remove os arquivos locais (best-effort). Em R2 isso seria feito no driver.
   if (process.env.STORAGE_DRIVER !== "r2") {
@@ -99,4 +106,5 @@ export async function updateVideo(input: UpdateVideoInput): Promise<void> {
 
   revalidatePath("/manage/videos");
   revalidatePath(`/manage/videos/${input.id}/edit`);
+  revalidateTag("feed");
 }

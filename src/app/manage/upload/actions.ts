@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { Role, VideoStatus } from "@prisma/client";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { after } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth/require-role";
@@ -126,9 +126,16 @@ export async function finalizeVideo(
           },
         });
       }
+      // Ao concluir (com ou sem HLS), se publicou, atualiza o feed cacheado.
+      if (input.publish) {
+        revalidateTag("feed");
+        revalidatePath("/manage/videos");
+      }
     });
   }
 
   revalidatePath("/manage/videos");
+  // Sem transcode o vídeo já nasce no status final; se publicado, invalida o feed.
+  if (!canTranscode && input.publish) revalidateTag("feed");
   return { id: video.id };
 }
