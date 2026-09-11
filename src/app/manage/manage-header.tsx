@@ -7,7 +7,7 @@ import { logoutAction } from "./actions";
 
 export function ManageHeader({ user }: { user: User }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-surface-0/80 backdrop-blur">
+    <header className="rk-bar">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
         <div className="flex items-center gap-6">
           <Link href="/manage" className="rounded focus-visible:outline-2 focus-visible:outline-brand">

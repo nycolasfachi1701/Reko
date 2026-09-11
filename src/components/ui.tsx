@@ -76,7 +76,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-[var(--border)] bg-surface-1 shadow-sm",
+        "rk-surface rounded-lg border border-[var(--border)] shadow-sm",
         hover && "lift",
         className,
       )}

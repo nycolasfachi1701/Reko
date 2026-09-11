@@ -207,6 +207,12 @@
   border: 1px solid color-mix(in srgb, var(--border-strong) 75%, transparent);
   box-shadow: var(--shadow-sm);
 }
+/* Frost sutil para cards de conteúdo (mantém o texto nítido). */
+.rk-surface {
+  background: color-mix(in srgb, var(--surface-1) 86%, transparent);
+  backdrop-filter: saturate(1.15) blur(10px);
+  -webkit-backdrop-filter: saturate(1.15) blur(10px);
+}
 .rk-glyph {
   width: 34px;
   height: 34px;
@@ -246,7 +252,9 @@
   border-radius: 999px;
   cursor: pointer;
   border: 1px solid var(--border-strong);
-  background: transparent;
+  background: color-mix(in srgb, var(--surface-1) 55%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: var(--text-lo);
   font: inherit;
   font-size: 13px;
