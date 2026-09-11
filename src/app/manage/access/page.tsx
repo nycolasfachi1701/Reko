@@ -45,17 +45,26 @@ export default async function UsersPage() {
 
         <Card className="divide-y divide-[var(--border)]">
           {users.map((u) => (
-            <div key={u.id} className="flex items-center justify-between gap-3 p-3.5">
+            <Link
+              key={u.id}
+              href={`/manage/access/${u.id}/edit`}
+              className="group flex items-center justify-between gap-3 p-3.5 transition-colors hover:bg-surface-2"
+            >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{u.name}</p>
                 <p className="truncate text-xs text-fg-mut">
                   {u.email ?? "sem e-mail"}
                 </p>
               </div>
-              <span className="shrink-0 rounded-full border border-[var(--border)] px-2.5 py-0.5 text-xs text-fg-lo">
-                {ROLE_LABEL[u.role]}
-              </span>
-            </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-xs text-fg-lo">
+                  {ROLE_LABEL[u.role]}
+                </span>
+                <span className="text-xs text-fg-mut transition-colors group-hover:text-brand">
+                  Editar →
+                </span>
+              </div>
+            </Link>
           ))}
         </Card>
       </main>

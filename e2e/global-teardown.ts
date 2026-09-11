@@ -2,7 +2,7 @@ import { prisma } from "./db";
 import * as F from "./fixtures";
 
 export default async function globalTeardown() {
-  const users = [F.VIEWER_USER_ID, F.MANAGER_USER_ID];
+  const users = [F.VIEWER_USER_ID, F.MANAGER_USER_ID, F.ADMIN_USER_ID];
 
   // Ordem respeitando FKs sem cascade: vídeos (uploadedById) antes dos usuários.
   await prisma.video.deleteMany({

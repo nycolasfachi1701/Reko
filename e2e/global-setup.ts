@@ -20,6 +20,18 @@ export default async function globalSetup() {
   });
 
   await prisma.user.upsert({
+    where: { id: F.ADMIN_USER_ID },
+    update: { email: F.ADMIN_EMAIL, passwordHash, role: "ADMIN", name: "E2E Admin" },
+    create: {
+      id: F.ADMIN_USER_ID,
+      email: F.ADMIN_EMAIL,
+      passwordHash,
+      role: "ADMIN",
+      name: "E2E Admin",
+    },
+  });
+
+  await prisma.user.upsert({
     where: { id: F.VIEWER_USER_ID },
     update: { role: "VIEWER", name: "E2E Espectador", email: F.VIEWER_EMAIL, passwordHash: viewerHash },
     create: {
@@ -62,7 +74,7 @@ export default async function globalSetup() {
 
   // estado limpo
   await prisma.session.deleteMany({
-    where: { userId: { in: [F.VIEWER_USER_ID, F.MANAGER_USER_ID] } },
+    where: { userId: { in: [F.VIEWER_USER_ID, F.MANAGER_USER_ID, F.ADMIN_USER_ID] } },
   });
   await prisma.viewSession.deleteMany({
     where: { videoId: { in: [F.PUBLISHED_VIDEO_ID, F.DRAFT_VIDEO_ID] } },
