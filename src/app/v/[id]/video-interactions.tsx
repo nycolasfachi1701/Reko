@@ -1,6 +1,7 @@
 "use client";
 
 import { type CSSProperties, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { VoteValue } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { toggleVote, toggleReaction } from "./actions";
@@ -30,6 +31,7 @@ export function VideoInteractions({
   myVote: Vote;
   reactions: ReactionState[];
 }) {
+  const router = useRouter();
   const [vote, setVote] = useState<Vote>(myVote);
   const [likes, setLikes] = useState(like);
   const [dislikes, setDislikes] = useState(dislike);
@@ -37,25 +39,39 @@ export function VideoInteractions({
   const [, start] = useTransition();
 
   function clickVote(value: "LIKE" | "DISLIKE") {
-    // atualização otimista dos contadores conforme a transição de estado
+    // snapshot para reverter caso a action falhe (rede/permissão)
+    const prev = { vote, likes, dislikes };
     setLikes((n) => n - (vote === "LIKE" ? 1 : 0) + (value === "LIKE" && vote !== "LIKE" ? 1 : 0));
     setDislikes(
       (n) => n - (vote === "DISLIKE" ? 1 : 0) + (value === "DISLIKE" && vote !== "DISLIKE" ? 1 : 0),
     );
     setVote((v) => (v === value ? null : value));
-    start(() => {
-      void toggleVote(videoId, value as VoteValue);
+    start(async () => {
+      try {
+        await toggleVote(videoId, value as VoteValue);
+      } catch {
+        setVote(prev.vote);
+        setLikes(prev.likes);
+        setDislikes(prev.dislikes);
+        router.refresh();
+      }
     });
   }
 
   function clickReaction(emoji: string) {
+    const prev = reacts;
     setReacts((rs) =>
       rs.map((r) =>
         r.emoji === emoji ? { ...r, mine: !r.mine, count: r.count + (r.mine ? -1 : 1) } : r,
       ),
     );
-    start(() => {
-      void toggleReaction(videoId, emoji);
+    start(async () => {
+      try {
+        await toggleReaction(videoId, emoji);
+      } catch {
+        setReacts(prev);
+        router.refresh();
+      }
     });
   }
 

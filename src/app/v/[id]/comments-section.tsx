@@ -70,12 +70,13 @@ function CommentItem({
   const [pending, start] = useTransition();
 
   function remove() {
+    if (!confirm("Remover este comentário?")) return;
     start(async () => {
       try {
         await deleteComment(comment.id);
+      } finally {
+        // sucesso ou falha (ex.: sem permissão): re-sincroniza com o servidor
         router.refresh();
-      } catch {
-        /* silencioso: a UI recarrega no próximo refresh */
       }
     });
   }
@@ -196,6 +197,7 @@ function Composer({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={placeholder}
+        aria-label={placeholder}
         rows={parentId ? 2 : 3}
         autoFocus={autoFocus}
         disabled={pending}
@@ -212,6 +214,9 @@ function Composer({
           </Button>
         ) : null}
         {error ? <span className="text-xs text-negative">{error}</span> : null}
+        {text.length > 1600 ? (
+          <span className="ml-auto text-xs tabular-nums text-fg-mut">{text.length}/2000</span>
+        ) : null}
       </div>
     </form>
   );
