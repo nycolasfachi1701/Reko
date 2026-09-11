@@ -128,28 +128,32 @@ export async function videoExpectativa(
   }
   const currentViews = cum;
 
-  // comparação com pares: views dos OUTROS vídeos nos primeiros `daysElapsed` dias
-  const others = await db.video.findMany({
-    where: { status: VideoStatus.PUBLISHED, id: { not: videoId }, publishedAt: { not: null } },
-    select: { id: true, publishedAt: true },
-  });
-  const peerViews: number[] = [];
-  for (const o of others) {
-    if (!o.publishedAt) continue;
-    const cutoff = new Date(o.publishedAt.getTime() + daysElapsed * DAY);
-    const n = await db.viewSession.count({
+  // Comparação com pares: média de views dos OUTROS vídeos publicados nos seus
+  // primeiros `daysElapsed` dias (corte relativo à publicação de cada um). Antes
+  // era um N+1 (um count por vídeo); agora são 2 queries — nº de pares
+  // (denominador) e o total de sessões via JOIN (numerador). startedAt e
+  // publishedAt são `timestamp` em UTC, então a comparação dispensa conversão.
+  const [peerCount, peerTotalRows] = await Promise.all([
+    db.video.count({
       where: {
-        videoId: o.id,
-        watchedSeconds: { gte: MIN_VIEW_SECONDS },
-        startedAt: { lte: cutoff },
+        status: VideoStatus.PUBLISHED,
+        id: { not: videoId },
+        publishedAt: { not: null },
       },
-    });
-    peerViews.push(n);
-  }
-  const peerAverage =
-    peerViews.length > 0
-      ? Math.round(peerViews.reduce((a, b) => a + b, 0) / peerViews.length)
-      : null;
+    }),
+    db.$queryRaw<{ total: number }[]>`
+      SELECT count(*)::int AS total
+      FROM "ViewSession" vs
+      JOIN "Video" v ON v.id = vs."videoId"
+      WHERE v.status::text = 'PUBLISHED'
+        AND v.id <> ${videoId}
+        AND v."publishedAt" IS NOT NULL
+        AND vs."watchedSeconds" >= ${MIN_VIEW_SECONDS}
+        AND vs."startedAt" <= v."publishedAt" + make_interval(days => ${daysElapsed}::int)
+    `,
+  ]);
+  const peerTotal = peerTotalRows[0]?.total ?? 0;
+  const peerAverage = peerCount > 0 ? Math.round(peerTotal / peerCount) : null;
 
   return {
     points,
