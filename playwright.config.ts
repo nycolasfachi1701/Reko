@@ -4,6 +4,9 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
+  // Re-tenta 2x: absorve transientes de I/O do build/cache do Next quando o
+  // projeto está sob OneDrive (que intercepta operações de arquivo em .next).
+  retries: 2,
   timeout: 60_000,
   expect: { timeout: 15_000 },
   globalSetup: "./e2e/global-setup.ts",
