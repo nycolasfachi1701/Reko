@@ -1,17 +1,10 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Prisma, Role } from "@prisma/client";
 import { db } from "@/lib/db";
-import { destroyCurrentSession } from "@/lib/auth/session";
 import { requireRole } from "@/lib/auth/require-role";
 import { hashPassword } from "@/lib/auth/password";
-
-export async function logoutAction(): Promise<void> {
-  await destroyCurrentSession();
-  redirect("/login");
-}
 
 export interface CreateUserState {
   ok?: string;

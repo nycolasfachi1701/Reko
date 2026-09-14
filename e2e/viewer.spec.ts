@@ -33,4 +33,8 @@ test("espectador loga, abre o vídeo e a visualização é registrada", async ({
       { timeout: 10_000 },
     )
     .toBeGreaterThan(0);
+
+  // logout disponível fora da gestão (feed/player): "Sair" leva ao login
+  await page.getByRole("button", { name: "Sair" }).click();
+  await expect(page).toHaveURL(/\/login/);
 });

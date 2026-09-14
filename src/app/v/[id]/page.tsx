@@ -6,6 +6,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getStorage } from "@/lib/storage";
 import { videoRetention } from "@/lib/analytics-data";
 import { VideoPlayer } from "@/components/player/video-player";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LogoutButton } from "@/components/logout-button";
 import { formatRelativeTime, formatViews } from "@/lib/format";
 import { REACTION_EMOJIS } from "./reactions";
 import { VideoInteractions } from "./video-interactions";
@@ -146,12 +148,16 @@ export default async function WatchPage({
               <span className="ml-2 font-sans text-xs font-medium text-fg-mut">por Nstech</span>
             </span>
           </Link>
-          <Link
-            href="/"
-            className="ml-auto text-sm text-fg-lo transition-colors hover:text-fg-hi"
-          >
-            ← Voltar aos vídeos
-          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              href="/"
+              className="text-sm text-fg-lo transition-colors hover:text-fg-hi"
+            >
+              ← Voltar aos vídeos
+            </Link>
+            <ThemeToggle />
+            <LogoutButton />
+          </div>
         </div>
       </header>
 

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { formatDuration } from "@/lib/utils";
 import { formatRelativeTime, formatViews } from "@/lib/format";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LogoutButton } from "@/components/logout-button";
 
 export interface FeedVideo {
   id: string;
@@ -192,6 +193,7 @@ export function FeedExperience({
             >
               {initials(user.name)}
             </span>
+            <LogoutButton />
           </div>
         </div>
       </header>

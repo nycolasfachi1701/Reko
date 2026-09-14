@@ -3,7 +3,7 @@ import { Role, type User } from "@prisma/client";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { logoutAction } from "./actions";
+import { logoutAction } from "@/lib/auth/logout";
 
 export function ManageHeader({ user }: { user: User }) {
   return (
