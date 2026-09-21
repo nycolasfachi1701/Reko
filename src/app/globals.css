@@ -53,22 +53,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --brand: #ff6a1a;
-    --brand-strong: #ff8642;
-    --brand-soft: rgba(255, 106, 26, 0.14);
-    --brand-ring: rgba(255, 106, 26, 0.32);
-    --on-brand: #1a0f04;
+    --brand: #ff5a1e;
+    --brand-strong: #ff7a3d;
+    --brand-soft: rgba(255, 90, 30, 0.16);
+    --brand-ring: rgba(255, 90, 30, 0.38);
+    --on-brand: #180a02;
 
-    --surface-0: #0c0c0e;
-    --surface-1: #131316;
-    --surface-2: #1a1a1f;
-    --surface-3: #212128;
+    --surface-0: #060607;
+    --surface-1: #0f0f12;
+    --surface-2: #17171b;
+    --surface-3: #202026;
 
-    --text-hi: #f4f3f6;
-    --text-lo: #a9a7b2;
-    --text-mut: #6d6b76;
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.16);
+    --text-hi: #ffffff;
+    --text-lo: #b4b2be;
+    --text-mut: #7a7883;
+    --border: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.20);
 
     --positive: #2dd4a7;
     --warning: #f5a623;
@@ -83,22 +83,22 @@
 }
 
 :root[data-theme="dark"] {
-  --brand: #ff6a1a;
-  --brand-strong: #ff8642;
-  --brand-soft: rgba(255, 106, 26, 0.14);
-  --brand-ring: rgba(255, 106, 26, 0.32);
-  --on-brand: #1a0f04;
+  --brand: #ff5a1e;
+  --brand-strong: #ff7a3d;
+  --brand-soft: rgba(255, 90, 30, 0.16);
+  --brand-ring: rgba(255, 90, 30, 0.38);
+  --on-brand: #180a02;
 
-  --surface-0: #0c0c0e;
-  --surface-1: #131316;
-  --surface-2: #1a1a1f;
-  --surface-3: #212128;
+  --surface-0: #060607;
+  --surface-1: #0f0f12;
+  --surface-2: #17171b;
+  --surface-3: #202026;
 
-  --text-hi: #f4f3f6;
-  --text-lo: #a9a7b2;
-  --text-mut: #6d6b76;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --text-hi: #ffffff;
+  --text-lo: #b4b2be;
+  --text-mut: #7a7883;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.20);
 
   --positive: #2dd4a7;
   --warning: #f5a623;
