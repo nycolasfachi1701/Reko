@@ -4,7 +4,11 @@ import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { FeedExperience, type FeedVideo } from "@/components/feed/feed-experience";
+import {
+  FeedExperience,
+  type FeedVideo,
+  type FeedTrack,
+} from "@/components/feed/feed-experience";
 
 const MIN_VIEW_SECONDS = 3;
 
@@ -55,6 +59,30 @@ const getPublishedFeed = unstable_cache(
   { revalidate: 60, tags: ["feed"] },
 );
 
+// Trilhas publicadas (cacheado; invalida via revalidateTag("tracks")).
+const getPublishedTracks = unstable_cache(
+  async (): Promise<FeedTrack[]> => {
+    const tracks = await db.track.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        title: true,
+        coverUrl: true,
+        _count: { select: { items: true } },
+      },
+    });
+    return tracks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      coverUrl: t.coverUrl,
+      videoCount: t._count.items,
+    }));
+  },
+  ["published-tracks"],
+  { revalidate: 60, tags: ["tracks"] },
+);
+
 function Landing() {
   return (
     <div className="flex min-h-screen flex-col">
@@ -99,8 +127,9 @@ export default async function Home() {
   if (!user) return <Landing />;
 
   // Compartilhado (cacheado) + overlay por usuário (dinâmico, leve) em paralelo.
-  const [{ items: base, tags }, sessions] = await Promise.all([
+  const [{ items: base, tags }, tracks, sessions] = await Promise.all([
     getPublishedFeed(),
+    getPublishedTracks(),
     db.viewSession.findMany({
       where: { userId: user.id, video: { status: "PUBLISHED" } },
       select: { videoId: true, maxPositionSec: true, completed: true },
@@ -121,6 +150,7 @@ export default async function Home() {
     <FeedExperience
       videos={items}
       tags={tags}
+      tracks={tracks}
       user={{ name: user.name, isManager: user.role !== Role.VIEWER }}
     />
   );

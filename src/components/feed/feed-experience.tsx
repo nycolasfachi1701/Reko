@@ -20,6 +20,13 @@ export interface FeedVideo {
   tags: string[];
 }
 
+export interface FeedTrack {
+  id: string;
+  title: string;
+  coverUrl: string | null;
+  videoCount: number;
+}
+
 const TONES = ["#20303a", "#2e2416", "#241f36", "#182a24", "#301a24", "#1e2438", "#2b2016", "#1c2a1e"];
 const MONO_TINTS = ["#ff6a1a", "#3bb78f", "#7c6cff", "#e0658a", "#4a9be0", "#e0a13b"];
 
@@ -100,13 +107,46 @@ function Card({ v }: { v: FeedVideo }) {
   );
 }
 
+function TrackCard({ t }: { t: FeedTrack }) {
+  const tone = TONES[hash(t.id) % TONES.length];
+  const tint = MONO_TINTS[hash(t.title) % MONO_TINTS.length];
+  const mono = (t.title.match(/[A-Za-zÀ-ÿ0-9]/)?.[0] ?? "R").toUpperCase();
+  return (
+    <Link href={`/t/${t.id}`} className="rk-card group flex flex-col gap-2.5 rounded-lg">
+      <div className="rk-thumb" style={{ background: `linear-gradient(150deg, ${tone}, #0b0a09)` }}>
+        {t.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={t.coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <span className="rk-mono" style={{ color: tint }}>
+            {mono}
+          </span>
+        )}
+        <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+          Trilha
+        </span>
+      </div>
+      <div>
+        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand">
+          {t.title}
+        </h3>
+        <p className="mt-1 text-[13px] text-fg-mut tabular-nums">
+          {t.videoCount} {t.videoCount === 1 ? "vídeo" : "vídeos"}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
 export function FeedExperience({
   videos,
   tags,
+  tracks,
   user,
 }: {
   videos: FeedVideo[];
   tags: string[];
+  tracks: FeedTrack[];
   user: { name: string; isManager: boolean };
 }) {
   const [q, setQ] = useState("");
@@ -267,6 +307,22 @@ export function FeedExperience({
               </p>
             </div>
           </Link>
+        ) : null}
+
+        {q.trim() === "" && tracks.length > 0 ? (
+          <section className="mb-9">
+            <div className="mb-4 flex items-baseline justify-between">
+              <h2 className="font-display text-xl font-bold tracking-tight">Trilhas</h2>
+              <span className="text-[13px] text-fg-mut tabular-nums">
+                {tracks.length} {tracks.length === 1 ? "trilha" : "trilhas"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-[22px] gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
+              {tracks.map((t) => (
+                <TrackCard key={t.id} t={t} />
+              ))}
+            </div>
+          </section>
         ) : null}
 
         <div className="mb-4 flex items-baseline justify-between">
