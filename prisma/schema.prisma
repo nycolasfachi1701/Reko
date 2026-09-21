@@ -28,6 +28,12 @@ enum VoteValue {
   DISLIKE
 }
 
+enum TrackStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id           String    @id @default(cuid())
   name         String
@@ -39,12 +45,13 @@ model User {
   lastSeenAt   DateTime?
 
   // relações
-  sessions     Session[]
-  videos       Video[] // vídeos que este usuário subiu
-  viewSessions ViewSession[]
-  votes        Vote[]
-  reactions    Reaction[]
-  comments     Comment[]
+  sessions      Session[]
+  videos        Video[] // vídeos que este usuário subiu
+  viewSessions  ViewSession[]
+  votes         Vote[]
+  reactions     Reaction[]
+  comments      Comment[]
+  createdTracks Track[] // trilhas que este usuário criou
 }
 
 model Session {
@@ -82,6 +89,7 @@ model Video {
   reactions    Reaction[]
   comments     Comment[]
   retention    Retention[]
+  trackItems   TrackItem[] // aparições deste vídeo em trilhas
 
   @@index([status, publishedAt])
 }
@@ -174,4 +182,52 @@ model Comment {
 
   @@index([videoId, createdAt])
   @@index([parentId])
+}
+
+// --- Trilhas (cursos) — Fase T1 -------------------------------------------
+// Uma trilha agrupa vídeos em módulos/seções, com ordem livre. Progresso e
+// atribuição vêm em fases seguintes (derivados de ViewSession.completed).
+
+model Track {
+  id          String      @id @default(cuid())
+  title       String
+  description String      @db.Text
+  coverUrl    String?
+  status      TrackStatus @default(DRAFT)
+  createdById String
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+  publishedAt DateTime?
+
+  modules TrackModule[]
+  items   TrackItem[]
+
+  @@index([status, publishedAt])
+}
+
+model TrackModule {
+  id      String @id @default(cuid())
+  trackId String
+  track   Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  title   String
+  order   Int    @default(0)
+
+  items TrackItem[]
+
+  @@index([trackId, order])
+}
+
+model TrackItem {
+  id       String       @id @default(cuid())
+  trackId  String
+  track    Track        @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  moduleId String? // null = vídeo solto na trilha (fora de módulo)
+  module   TrackModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  videoId  String
+  video    Video        @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  order    Int          @default(0) // ordem dentro do módulo (ou da trilha, se solto)
+
+  @@unique([trackId, videoId]) // um vídeo não repete na mesma trilha
+  @@index([trackId, order])
+  @@index([moduleId, order])
 }
