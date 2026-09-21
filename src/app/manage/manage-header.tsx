@@ -20,6 +20,9 @@ export function ManageHeader({ user }: { user: User }) {
             <Link href="/manage/videos" className="transition-colors hover:text-fg-hi">
               Vídeos
             </Link>
+            <Link href="/manage/tracks" className="transition-colors hover:text-fg-hi">
+              Trilhas
+            </Link>
             {user.role === Role.ADMIN ? (
               <Link href="/manage/access" className="transition-colors hover:text-fg-hi">
                 Acessos
