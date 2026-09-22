@@ -225,18 +225,17 @@
     scroll-behavior: auto !important;
   }
 }
+/* Glifo da marca: marca da Atua (a grade laranja). O "R" legado no HTML é
+   escondido (color transparent / font-size 0) e a marca vem como imagem. */
 .rk-glyph {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
-  background: var(--brand);
-  color: var(--on-brand);
+  background: url("/atua-mark.png") center / contain no-repeat;
+  color: transparent;
+  font-size: 0;
   display: grid;
   place-items: center;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  font-size: 20px;
-  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--brand) 70%, transparent);
+  flex-shrink: 0;
 }
 .rk-search input {
   width: 100%;
