@@ -185,14 +185,12 @@ export function FeedExperience({
     <div className="min-h-screen">
       <header className="rk-bar">
         <div className="mx-auto flex h-[68px] max-w-6xl items-center gap-5 px-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Reko, por Nstech">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Reko">
             <span className="rk-glyph" aria-hidden>
               R
             </span>
             <span className="font-display text-[22px] font-extrabold tracking-tight">
-              Reko
-              <span className="ml-2 font-sans text-xs font-medium text-fg-mut">por Nstech</span>
-            </span>
+              Reko            </span>
           </Link>
 
           <div className="rk-search relative mx-auto hidden max-w-[460px] flex-1 sm:block">

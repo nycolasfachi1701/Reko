@@ -77,14 +77,12 @@ export default async function TrackPage({
     <div className="min-h-screen">
       <header className="rk-bar">
         <div className="mx-auto flex h-[68px] max-w-4xl items-center gap-4 px-4 sm:px-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Reko, por Nstech">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Reko">
             <span className="rk-glyph" aria-hidden>
               R
             </span>
             <span className="font-display text-[20px] font-extrabold tracking-tight">
-              Reko
-              <span className="ml-2 font-sans text-xs font-medium text-fg-mut">por Nstech</span>
-            </span>
+              Reko            </span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/" className="text-sm text-fg-lo transition-colors hover:text-fg-hi">

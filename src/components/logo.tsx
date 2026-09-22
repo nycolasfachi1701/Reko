@@ -16,9 +16,6 @@ export function Logo({
       {showText ? (
         <span className="font-display text-lg font-extrabold tracking-tight text-fg-hi">
           Reko
-          <span className="ml-1.5 align-middle font-sans text-xs font-medium text-fg-mut">
-            por Nstech
-          </span>
         </span>
       ) : null}
     </span>

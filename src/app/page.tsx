@@ -92,9 +92,7 @@ function Landing() {
             R
           </span>
           <span className="font-display text-[22px] font-extrabold tracking-tight">
-            Reko
-            <span className="ml-2 font-sans text-xs font-medium text-fg-mut">por Nstech</span>
-          </span>
+            Reko          </span>
         </span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
