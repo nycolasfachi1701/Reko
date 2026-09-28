@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
-import { formatDuration } from "@/lib/utils";
+import { formatDuration, cn } from "@/lib/utils";
+import { completedAmong } from "@/lib/tracks-progress";
 
 export const dynamic = "force-dynamic";
 
@@ -50,18 +51,39 @@ export default async function TrackPage({
   const totalVideos =
     track.modules.reduce((n, m) => n + m.items.length, 0) + track.items.length;
 
+  // progresso (deriva de ViewSession.completed)
+  const flat = [...track.modules.flatMap((m) => m.items), ...track.items];
+  const completed = await completedAmong(
+    user.id,
+    flat.map((it) => it.video.id),
+  );
+  const completedCount = flat.filter((it) => completed.has(it.video.id)).length;
+  const next = flat.find((it) => !completed.has(it.video.id));
+  const pct = totalVideos > 0 ? Math.round((completedCount / totalVideos) * 100) : 0;
+
   // numeração contínua ao longo da trilha (aula 1..N)
   let n = 0;
   const VideoRow = (it: Row) => {
     n += 1;
+    const done = completed.has(it.video.id);
     return (
       <Link
         key={it.id}
         href={`/v/${it.video.id}?track=${track.id}`}
         className="group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-surface-2"
       >
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-semibold tabular-nums text-fg-lo">
-          {n}
+        <span
+          className={cn(
+            "grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold tabular-nums",
+            done ? "" : "bg-surface-2 text-fg-lo",
+          )}
+          style={
+            done
+              ? { background: "color-mix(in srgb, var(--positive) 18%, transparent)", color: "var(--positive)" }
+              : undefined
+          }
+        >
+          {done ? "✓" : n}
         </span>
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg-hi transition-colors group-hover:text-brand">
           {it.video.title}
@@ -112,6 +134,29 @@ export default async function TrackPage({
           <p className="mt-4 max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-fg-lo">
             {track.description}
           </p>
+        ) : null}
+
+        {totalVideos > 0 ? (
+          <div className="mt-5 max-w-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm tabular-nums text-fg-lo">
+                {completedCount} de {totalVideos} concluídos · {pct}%
+              </span>
+              {next ? (
+                <Link
+                  href={`/v/${next.video.id}?track=${track.id}`}
+                  className="inline-flex items-center rounded-sm bg-brand px-4 py-2 text-sm font-medium text-[var(--on-brand)] transition-colors hover:bg-brand-strong"
+                >
+                  {completedCount === 0 ? "Começar trilha" : "Continuar"}
+                </Link>
+              ) : (
+                <span className="text-sm font-medium text-positive">Trilha concluída ✓</span>
+              )}
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+              <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
         ) : null}
 
         <div className="mt-8 flex flex-col gap-6">

@@ -59,9 +59,16 @@ const getPublishedFeed = unstable_cache(
   { revalidate: 60, tags: ["feed"] },
 );
 
-// Trilhas publicadas (cacheado; invalida via revalidateTag("tracks")).
+// Trilhas publicadas — parte compartilhada, cacheada (invalida via
+// revalidateTag("tracks")). Traz os videoIds para o progresso por usuário.
+interface TrackBase {
+  id: string;
+  title: string;
+  coverUrl: string | null;
+  videoIds: string[];
+}
 const getPublishedTracks = unstable_cache(
-  async (): Promise<FeedTrack[]> => {
+  async (): Promise<TrackBase[]> => {
     const tracks = await db.track.findMany({
       where: { status: "PUBLISHED" },
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
@@ -69,14 +76,14 @@ const getPublishedTracks = unstable_cache(
         id: true,
         title: true,
         coverUrl: true,
-        _count: { select: { items: true } },
+        items: { select: { videoId: true } },
       },
     });
     return tracks.map((t) => ({
       id: t.id,
       title: t.title,
       coverUrl: t.coverUrl,
-      videoCount: t._count.items,
+      videoIds: t.items.map((i) => i.videoId),
     }));
   },
   ["published-tracks"],
@@ -135,6 +142,18 @@ export default async function Home() {
   ]);
   const byVideo = new Map(sessions.map((s) => [s.videoId, s]));
 
+  // progresso das trilhas: reaproveita as sessões (vídeos concluídos do usuário)
+  const completedSet = new Set(
+    sessions.filter((s) => s.completed).map((s) => s.videoId),
+  );
+  const feedTracks: FeedTrack[] = tracks.map((t) => ({
+    id: t.id,
+    title: t.title,
+    coverUrl: t.coverUrl,
+    videoCount: t.videoIds.length,
+    completedCount: t.videoIds.filter((v) => completedSet.has(v)).length,
+  }));
+
   const items: FeedVideo[] = base.map((v) => {
     const s = byVideo.get(v.id);
     const resumeRatio =
@@ -148,7 +167,7 @@ export default async function Home() {
     <FeedExperience
       videos={items}
       tags={tags}
-      tracks={tracks}
+      tracks={feedTracks}
       user={{ name: user.name, isManager: user.role !== Role.VIEWER }}
     />
   );

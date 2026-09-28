@@ -6,7 +6,12 @@ import * as F from "./fixtures";
 // aparece no feed do espectador (cache invalidado via revalidateTag).
 test("gestor cria trilha, adiciona vídeo e publica", async ({ page }) => {
   const title = `E2E Trilha ${Date.now()}`;
-  const clean = () => prisma.track.deleteMany({ where: { title } });
+  const clean = async () => {
+    await prisma.track.deleteMany({ where: { title } });
+    await prisma.viewSession.deleteMany({
+      where: { videoId: F.PUBLISHED_VIDEO_ID, userId: F.MANAGER_USER_ID },
+    });
+  };
   await clean();
 
   try {
@@ -48,6 +53,21 @@ test("gestor cria trilha, adiciona vídeo e publica", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Trilhas" })).toBeVisible();
     await expect(page.getByText(title)).toBeVisible();
+
+    // progresso: concluir o vídeo reflete na página da trilha (deriva de completed)
+    const tr = await prisma.track.findFirst({ where: { title }, select: { id: true } });
+    await prisma.viewSession.create({
+      data: {
+        videoId: F.PUBLISHED_VIDEO_ID,
+        userId: F.MANAGER_USER_ID,
+        watchedSeconds: 120,
+        maxPositionSec: 120,
+        completed: true,
+        device: "desktop",
+      },
+    });
+    await page.goto(`/t/${tr!.id}`);
+    await expect(page.getByText("Trilha concluída ✓")).toBeVisible();
   } finally {
     await clean();
   }

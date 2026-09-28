@@ -25,6 +25,7 @@ export interface FeedTrack {
   title: string;
   coverUrl: string | null;
   videoCount: number;
+  completedCount: number;
 }
 
 const TONES = ["#20303a", "#2e2416", "#241f36", "#182a24", "#301a24", "#1e2438", "#2b2016", "#1c2a1e"];
@@ -130,9 +131,28 @@ function TrackCard({ t }: { t: FeedTrack }) {
         <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand">
           {t.title}
         </h3>
-        <p className="mt-1 text-[13px] text-fg-mut tabular-nums">
-          {t.videoCount} {t.videoCount === 1 ? "vídeo" : "vídeos"}
-        </p>
+        {t.videoCount === 0 ? (
+          <p className="mt-1 text-[13px] text-fg-mut">Sem vídeos</p>
+        ) : (
+          <>
+            <p className="mt-1 text-[13px] tabular-nums">
+              {t.completedCount >= t.videoCount ? (
+                <span className="text-positive">Concluída ✓</span>
+              ) : (
+                <span className="text-fg-mut">
+                  {t.completedCount}/{t.videoCount} ·{" "}
+                  {Math.round((t.completedCount / t.videoCount) * 100)}%
+                </span>
+              )}
+            </p>
+            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-surface-2">
+              <div
+                className="h-full rounded-full bg-brand"
+                style={{ width: `${(t.completedCount / t.videoCount) * 100}%` }}
+              />
+            </div>
+          </>
+        )}
       </div>
     </Link>
   );

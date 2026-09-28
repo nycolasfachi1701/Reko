@@ -26,13 +26,13 @@ export default async function WatchPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ t?: string }>;
+  searchParams: Promise<{ t?: string; track?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   const { id } = await params;
-  const { t } = await searchParams;
+  const { t, track: trackId } = await searchParams;
 
   const video = await db.video.findUnique({
     where: { id },
@@ -135,6 +135,52 @@ export default async function WatchPage({
     ? ret.values.map((v) => v / peak)
     : undefined;
 
+  // Contexto de trilha (?track=): navegação anterior/próximo na sequência.
+  let trackNav: {
+    trackId: string;
+    title: string;
+    position: number;
+    total: number;
+    prev: string | null;
+    next: string | null;
+  } | null = null;
+  if (trackId) {
+    const tr = await db.track.findUnique({
+      where: { id: trackId },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        modules: {
+          orderBy: { order: "asc" },
+          select: { items: { orderBy: { order: "asc" }, select: { videoId: true } } },
+        },
+        items: {
+          where: { moduleId: null },
+          orderBy: { order: "asc" },
+          select: { videoId: true },
+        },
+      },
+    });
+    if (tr && (tr.status === "PUBLISHED" || isManager)) {
+      const ordered = [
+        ...tr.modules.flatMap((m) => m.items.map((i) => i.videoId)),
+        ...tr.items.map((i) => i.videoId),
+      ];
+      const idx = ordered.indexOf(id);
+      if (idx !== -1) {
+        trackNav = {
+          trackId: tr.id,
+          title: tr.title,
+          position: idx + 1,
+          total: ordered.length,
+          prev: idx > 0 ? ordered[idx - 1]! : null,
+          next: idx < ordered.length - 1 ? ordered[idx + 1]! : null,
+        };
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <header className="rk-bar">
@@ -163,6 +209,37 @@ export default async function WatchPage({
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           {/* Coluna principal */}
           <div className="min-w-0">
+            {trackNav ? (
+              <div className="rk-surface mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-2.5">
+                <Link
+                  href={`/t/${trackNav.trackId}`}
+                  className="min-w-0 truncate text-sm text-fg-lo transition-colors hover:text-fg-hi"
+                >
+                  ← {trackNav.title}{" "}
+                  <span className="tabular-nums text-fg-mut">
+                    · aula {trackNav.position}/{trackNav.total}
+                  </span>
+                </Link>
+                <div className="flex shrink-0 items-center gap-2">
+                  {trackNav.prev ? (
+                    <Link
+                      href={`/v/${trackNav.prev}?track=${trackNav.trackId}`}
+                      className="rounded-sm border border-[var(--border-strong)] px-3 py-1.5 text-sm text-fg-lo transition-colors hover:bg-surface-2 hover:text-fg-hi"
+                    >
+                      ← Anterior
+                    </Link>
+                  ) : null}
+                  {trackNav.next ? (
+                    <Link
+                      href={`/v/${trackNav.next}?track=${trackNav.trackId}`}
+                      className="rounded-sm bg-brand px-3 py-1.5 text-sm font-medium text-[var(--on-brand)] transition-colors hover:bg-brand-strong"
+                    >
+                      Próximo →
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
             <div
               className="overflow-hidden rounded-2xl shadow-lg"
               style={{ viewTransitionName: `poster-${video.id}` }}
