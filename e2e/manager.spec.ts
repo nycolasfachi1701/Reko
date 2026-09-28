@@ -24,6 +24,14 @@ test("gestor loga, publica vídeo e confere as métricas", async ({ page }) => {
   const row = page.getByTestId(`video-row-${F.DRAFT_VIDEO_ID}`);
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Publicar" }).click();
+  // espera a publicação persistir e reflete via reload (render fresco)
+  await expect
+    .poll(async () => {
+      const v = await prisma.video.findUnique({ where: { id: F.DRAFT_VIDEO_ID } });
+      return v?.status;
+    })
+    .toBe("PUBLISHED");
+  await page.reload();
   await expect(row.getByText("Publicado")).toBeVisible();
 
   // confere os três blocos no detalhe

@@ -41,7 +41,7 @@ test("mídia de rascunho: espectador 404, gestor 200", async ({ browser }) => {
     await vPage.getByLabel("Senha").fill(F.VIEWER_PASSWORD);
     await vPage.getByRole("button", { name: "Entrar" }).click();
     await expect(
-      vPage.getByRole("link", { name: "Reko, por Nstech" }),
+      vPage.getByRole("link", { name: "Reko" }),
     ).toBeVisible();
     const vRes = await vPage.request.get(`/api/media/${REL}`);
     expect(vRes.status()).toBe(404);

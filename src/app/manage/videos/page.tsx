@@ -8,6 +8,8 @@ import { formatDuration } from "@/lib/utils";
 import { ManageHeader } from "../manage-header";
 import { VideoRowActions } from "./video-row-actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function VideosPage() {
   const user = await requireRole([Role.MANAGER, Role.ADMIN]);
 

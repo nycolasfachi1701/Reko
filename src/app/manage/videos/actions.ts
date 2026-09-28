@@ -4,6 +4,7 @@ import { rm, unlink } from "node:fs/promises";
 import { basename, extname } from "node:path";
 import { Role, VideoStatus } from "@prisma/client";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth/require-role";
 import { resolveKeyPath } from "@/lib/storage/local-fs";
@@ -13,9 +14,14 @@ async function assertManager() {
 }
 
 // Atualiza a listagem de gestão e invalida o cache do feed do espectador.
+// O revalidateTag roda em after() (pós-resposta): invalidar tag faz I/O em
+// .next/cache que pode travar a action; assim a UI não fica pendurada.
 function revalidateCatalog(): void {
   revalidatePath("/manage/videos");
-  revalidateTag("feed");
+  // revalidateTag em after() (pós-resposta): a listagem de gestão já é
+  // force-dynamic, então a UI atualiza pelo router.refresh; o feed é
+  // invalidado em background sem pendurar a action.
+  after(() => revalidateTag("feed"));
 }
 
 export async function publishVideo(id: string): Promise<void> {

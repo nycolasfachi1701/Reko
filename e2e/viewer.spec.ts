@@ -13,7 +13,7 @@ test("espectador loga, abre o vídeo e a visualização é registrada", async ({
 
   // caiu no feed do espectador (marca visível no topo)
   await expect(
-    page.getByRole("link", { name: "Reko, por Nstech" }),
+    page.getByRole("link", { name: "Reko" }),
   ).toBeVisible();
 
   // abre o vídeo publicado

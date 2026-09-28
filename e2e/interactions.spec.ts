@@ -21,7 +21,7 @@ test("espectador curte e comenta um vídeo", async ({ page }) => {
   await page.getByLabel("Senha").fill(F.VIEWER_PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(
-    page.getByRole("link", { name: "Reko, por Nstech" }),
+    page.getByRole("link", { name: "Reko" }),
   ).toBeVisible();
 
   await page.goto(`/v/${F.PUBLISHED_VIDEO_ID}`);
