@@ -1,11 +1,11 @@
-import { hash } from "@node-rs/argon2";
+import { hashPassword } from "../src/lib/auth/scrypt";
 import { prisma } from "./db";
 import * as F from "./fixtures";
 
 // Cria fixtures determinísticas para os fluxos E2E (SPEC §10, Fase 9).
 export default async function globalSetup() {
-  const passwordHash = await hash(F.MANAGER_PASSWORD);
-  const viewerHash = await hash(F.VIEWER_PASSWORD);
+  const passwordHash = await hashPassword(F.MANAGER_PASSWORD);
+  const viewerHash = await hashPassword(F.VIEWER_PASSWORD);
 
   const manager = await prisma.user.upsert({
     where: { id: F.MANAGER_USER_ID },

@@ -1,20 +1,8 @@
 import "server-only";
-import { hash, verify } from "@node-rs/argon2";
 
-// Argon2id (SPEC §4.2). Parâmetros = defaults do @node-rs/argon2
-// (m=19456 KiB, t=2, p=1), alinhados às recomendações OWASP.
-
-export function hashPassword(plain: string): Promise<string> {
-  return hash(plain);
-}
-
-export async function verifyPassword(
-  hashed: string,
-  plain: string,
-): Promise<boolean> {
-  try {
-    return await verify(hashed, plain);
-  } catch {
-    return false;
-  }
-}
+// Hash de senha com scrypt (crypto nativo do Node — sem binário externo, roda em
+// qualquer ambiente, inclusive com Application Control/Smart App Control ativo).
+// A lógica vive em ./scrypt (módulo puro, sem "server-only") para ser reutilizada
+// pelo seed e pelos fixtures de teste. Aqui só reexportamos, mantendo o guard
+// "server-only" no caminho que o app usa.
+export { hashPassword, verifyPassword } from "./scrypt";

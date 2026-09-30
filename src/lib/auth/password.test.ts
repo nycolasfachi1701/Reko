@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { hashPassword, verifyPassword } from "./password";
+import { hashPassword, verifyPassword } from "./scrypt";
 
-describe("password (argon2id)", () => {
-  it("gera hash argon2id e verifica a senha correta", async () => {
+describe("password (scrypt)", () => {
+  it("gera hash scrypt e verifica a senha correta", async () => {
     const h = await hashPassword("senha-super-secreta");
-    expect(h.startsWith("$argon2id$")).toBe(true);
+    expect(h.startsWith("scrypt$")).toBe(true);
     expect(await verifyPassword(h, "senha-super-secreta")).toBe(true);
   });
 

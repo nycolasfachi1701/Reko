@@ -1,18 +1,18 @@
 import { PrismaClient, Role, VideoStatus } from "@prisma/client";
-import { hash } from "@node-rs/argon2";
+import { hashPassword } from "../src/lib/auth/scrypt";
 
 const prisma = new PrismaClient();
 
 // Senha do admin apenas para DESENVOLVIMENTO. Documentada no README.
-// Hash com Argon2id (@node-rs/argon2), igual ao usado no login (SPEC §4.2).
+// Hash com scrypt (crypto nativo do Node), igual ao usado no login (SPEC §4.2).
 const DEV_ADMIN_EMAIL = "nycolas.fachi@nstech.com.br";
 const DEV_ADMIN_PASSWORD = "admin1234";
 // Todo usuário entra com e-mail+senha (inclusive espectadores). Senha dev única.
 const DEV_VIEWER_PASSWORD = "viewer1234";
 
 async function main() {
-  const passwordHash = await hash(DEV_ADMIN_PASSWORD);
-  const viewerHash = await hash(DEV_VIEWER_PASSWORD);
+  const passwordHash = await hashPassword(DEV_ADMIN_PASSWORD);
+  const viewerHash = await hashPassword(DEV_VIEWER_PASSWORD);
 
   // --- 1 admin --------------------------------------------------------------
   const admin = await prisma.user.upsert({

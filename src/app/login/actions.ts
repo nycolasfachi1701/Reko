@@ -9,10 +9,10 @@ import { createSession } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/auth/rate-limit";
 import { getClientIp } from "@/lib/auth/request-ip";
 
-// Hash argon2id fixo, usado quando o e-mail não existe: mantém o tempo de
+// Hash scrypt fixo, usado quando o e-mail não existe: mantém o tempo de
 // resposta constante e não revela se a conta existe (SPEC §4.2).
 const DUMMY_HASH =
-  "$argon2id$v=19$m=19456,t=2,p=1$KSQinmTdaw7OkV4uRA4Wng$8UKEaMmJl3Oep07D3RsUKkmx4caSwAgKc8pf0ZyUKS8";
+  "scrypt$16384$996adc9ea93d2dce9b968041aa91c50f$804b4846c8878915a9862fe00a9920ed956266fea919cbb334b0fd4c693e5adaca04c9cb33fa4b32bfba419e62f40c5fc890f908d55cb59b2fe37e85008cd2ee";
 
 const GENERIC_ERROR = "E-mail ou senha incorretos.";
 
