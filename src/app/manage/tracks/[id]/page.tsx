@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
 import { ManageHeader } from "../../manage-header";
 import { TrackEditor } from "./track-editor";
+import { TrackAssignments } from "./track-assignments";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,43 @@ export default async function TrackEditorPage({
     select: { id: true, title: true, durationSec: true },
   });
 
+  // --- atribuições + progresso por usuário ---
+  const trackVideoIds = [
+    ...track.modules.flatMap((m) => m.items.map((i) => i.videoId)),
+    ...track.items.map((i) => i.videoId),
+  ];
+  const totalVideos = trackVideoIds.length;
+
+  const [assignments, allUsers] = await Promise.all([
+    db.trackAssignment.findMany({
+      where: { trackId: id },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        dueDate: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+    }),
+    db.user.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true, role: true },
+    }),
+  ]);
+
+  const assigneeIds = assignments.map((a) => a.user.id);
+  const doneRows =
+    assigneeIds.length > 0 && totalVideos > 0
+      ? await db.viewSession.findMany({
+          where: { userId: { in: assigneeIds }, completed: true, videoId: { in: trackVideoIds } },
+          select: { userId: true, videoId: true },
+          distinct: ["userId", "videoId"],
+        })
+      : [];
+  const doneByUser = new Map<string, number>();
+  for (const r of doneRows) doneByUser.set(r.userId, (doneByUser.get(r.userId) ?? 0) + 1);
+
+  const assignedIds = new Set(assigneeIds);
+
   type Row = { video: { id: string; title: string; durationSec: number }; id: string; videoId: string };
   const mapItem = (it: Row) => ({
     id: it.id,
@@ -75,6 +113,21 @@ export default async function TrackEditorPage({
             looseItems: track.items.map(mapItem),
           }}
           videos={videos}
+        />
+
+        <TrackAssignments
+          trackId={track.id}
+          totalVideos={totalVideos}
+          assignees={assignments.map((a) => ({
+            id: a.id,
+            name: a.user.name,
+            email: a.user.email,
+            dueDate: a.dueDate ? a.dueDate.toISOString() : null,
+            completed: doneByUser.get(a.user.id) ?? 0,
+          }))}
+          availableUsers={allUsers
+            .filter((u) => !assignedIds.has(u.id))
+            .map((u) => ({ id: u.id, name: u.name, email: u.email }))}
         />
       </main>
     </>

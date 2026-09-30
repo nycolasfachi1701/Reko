@@ -2,6 +2,7 @@
 
 import { Prisma, Role, TrackStatus } from "@prisma/client";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth/require-role";
 
@@ -10,10 +11,12 @@ async function assertManager() {
 }
 
 // Atualiza a gestão da trilha e invalida o cache do espectador (tag "tracks").
+// revalidateTag em after(): não pendura a action (as páginas de gestão são
+// force-dynamic e atualizam via router.refresh).
 function revalidateTrack(id: string): void {
   revalidatePath("/manage/tracks");
   revalidatePath(`/manage/tracks/${id}`);
-  revalidateTag("tracks");
+  after(() => revalidateTag("tracks"));
 }
 
 // ----------------------------- Trilha ------------------------------------
@@ -194,4 +197,33 @@ export async function moveItem(itemId: string, dir: "up" | "down"): Promise<void
     db.trackItem.update({ where: { id: neighbor.id }, data: { order: it.order } }),
   ]);
   revalidateTrack(it.trackId);
+}
+
+// --------------------------- Atribuição ----------------------------------
+export async function assignUsers(
+  trackId: string,
+  userIds: string[],
+  dueDate: string | null,
+): Promise<void> {
+  const me = await assertManager();
+  const due = dueDate ? new Date(dueDate) : null;
+  if (due && Number.isNaN(due.getTime())) throw new Error("Prazo inválido.");
+
+  for (const userId of userIds) {
+    await db.trackAssignment.upsert({
+      where: { trackId_userId: { trackId, userId } },
+      update: { dueDate: due },
+      create: { trackId, userId, assignedById: me.id, dueDate: due },
+    });
+  }
+  revalidateTrack(trackId);
+}
+
+export async function unassign(assignmentId: string): Promise<void> {
+  await assertManager();
+  const a = await db.trackAssignment.delete({
+    where: { id: assignmentId },
+    select: { trackId: true },
+  });
+  revalidateTrack(a.trackId);
 }

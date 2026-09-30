@@ -132,15 +132,20 @@ export default async function Home() {
   if (!user) return <Landing />;
 
   // Compartilhado (cacheado) + overlay por usuário (dinâmico, leve) em paralelo.
-  const [{ items: base, tags }, tracks, sessions] = await Promise.all([
+  const [{ items: base, tags }, tracks, sessions, myAssignments] = await Promise.all([
     getPublishedFeed(),
     getPublishedTracks(),
     db.viewSession.findMany({
       where: { userId: user.id, video: { status: "PUBLISHED" } },
       select: { videoId: true, maxPositionSec: true, completed: true },
     }),
+    db.trackAssignment.findMany({
+      where: { userId: user.id },
+      select: { trackId: true, dueDate: true },
+    }),
   ]);
   const byVideo = new Map(sessions.map((s) => [s.videoId, s]));
+  const assignMap = new Map(myAssignments.map((a) => [a.trackId, a.dueDate]));
 
   // progresso das trilhas: reaproveita as sessões (vídeos concluídos do usuário)
   const completedSet = new Set(
@@ -152,6 +157,8 @@ export default async function Home() {
     coverUrl: t.coverUrl,
     videoCount: t.videoIds.length,
     completedCount: t.videoIds.filter((v) => completedSet.has(v)).length,
+    required: assignMap.has(t.id),
+    dueDate: assignMap.get(t.id)?.toISOString() ?? null,
   }));
 
   const items: FeedVideo[] = base.map((v) => {

@@ -61,6 +61,16 @@ export default async function TrackPage({
   const next = flat.find((it) => !completed.has(it.video.id));
   const pct = totalVideos > 0 ? Math.round((completedCount / totalVideos) * 100) : 0;
 
+  // atribuição (obrigatoriedade) para este usuário
+  const assignment = await db.trackAssignment.findUnique({
+    where: { trackId_userId: { trackId: id, userId: user.id } },
+    select: { dueDate: true },
+  });
+  const overdue =
+    assignment?.dueDate != null &&
+    completedCount < totalVideos &&
+    new Date(assignment.dueDate) < new Date();
+
   // numeração contínua ao longo da trilha (aula 1..N)
   let n = 0;
   const VideoRow = (it: Row) => {
@@ -123,12 +133,31 @@ export default async function TrackPage({
           </p>
         ) : null}
 
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">Trilha</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">Trilha</p>
+          {assignment ? (
+            <span
+              className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--on-brand)]"
+              style={{ background: "var(--brand)" }}
+            >
+              Obrigatória
+            </span>
+          ) : null}
+        </div>
         <h1 className="mt-1 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
           {track.title}
         </h1>
-        <p className="mt-2 text-sm text-fg-mut tabular-nums">
-          {totalVideos} {totalVideos === 1 ? "vídeo" : "vídeos"}
+        <p className="mt-2 text-sm tabular-nums">
+          <span className="text-fg-mut">
+            {totalVideos} {totalVideos === 1 ? "vídeo" : "vídeos"}
+          </span>
+          {assignment?.dueDate ? (
+            <span className={overdue ? "text-negative" : "text-fg-mut"}>
+              {" · prazo "}
+              {new Date(assignment.dueDate).toLocaleDateString("pt-BR")}
+              {overdue ? " (vencido)" : ""}
+            </span>
+          ) : null}
         </p>
         {track.description ? (
           <p className="mt-4 max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-fg-lo">

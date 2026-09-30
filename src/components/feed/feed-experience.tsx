@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { formatDuration } from "@/lib/utils";
+import { formatDuration, cn } from "@/lib/utils";
 import { formatRelativeTime, formatViews } from "@/lib/format";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
@@ -26,6 +26,8 @@ export interface FeedTrack {
   coverUrl: string | null;
   videoCount: number;
   completedCount: number;
+  required: boolean;
+  dueDate: string | null; // ISO
 }
 
 const TONES = ["#20303a", "#2e2416", "#241f36", "#182a24", "#301a24", "#1e2438", "#2b2016", "#1c2a1e"];
@@ -126,6 +128,14 @@ function TrackCard({ t }: { t: FeedTrack }) {
         <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
           Trilha
         </span>
+        {t.required ? (
+          <span
+            className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--on-brand)]"
+            style={{ background: "var(--brand)" }}
+          >
+            Obrigatória
+          </span>
+        ) : null}
       </div>
       <div>
         <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand">
@@ -153,6 +163,18 @@ function TrackCard({ t }: { t: FeedTrack }) {
             </div>
           </>
         )}
+        {t.required && t.dueDate ? (
+          <p
+            className={cn(
+              "mt-1 text-[12px] tabular-nums",
+              new Date(t.dueDate) < new Date() && t.completedCount < t.videoCount
+                ? "text-negative"
+                : "text-fg-mut",
+            )}
+          >
+            Prazo: {new Date(t.dueDate).toLocaleDateString("pt-BR")}
+          </p>
+        ) : null}
       </div>
     </Link>
   );

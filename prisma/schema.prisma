@@ -51,7 +51,9 @@ model User {
   votes         Vote[]
   reactions     Reaction[]
   comments      Comment[]
-  createdTracks Track[] // trilhas que este usuário criou
+  createdTracks        Track[] // trilhas que este usuário criou
+  assignedTracks       TrackAssignment[] @relation("AssignedTracks")
+  trackAssignmentsMade TrackAssignment[] @relation("TrackAssigner")
 }
 
 model Session {
@@ -199,8 +201,9 @@ model Track {
   createdAt   DateTime    @default(now())
   publishedAt DateTime?
 
-  modules TrackModule[]
-  items   TrackItem[]
+  modules     TrackModule[]
+  items       TrackItem[]
+  assignments TrackAssignment[]
 
   @@index([status, publishedAt])
 }
@@ -230,4 +233,21 @@ model TrackItem {
   @@unique([trackId, videoId]) // um vídeo não repete na mesma trilha
   @@index([trackId, order])
   @@index([moduleId, order])
+}
+
+// Atribuição de trilha a um usuário (obrigatoriedade), com prazo opcional.
+// Progresso/conclusão são derivados de ViewSession.completed — sem estado aqui.
+model TrackAssignment {
+  id           String    @id @default(cuid())
+  trackId      String
+  track        Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation("AssignedTracks", fields: [userId], references: [id], onDelete: Cascade)
+  assignedById String
+  assignedBy   User      @relation("TrackAssigner", fields: [assignedById], references: [id])
+  dueDate      DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([trackId, userId]) // um usuário é atribuído uma vez por trilha
+  @@index([userId])
 }

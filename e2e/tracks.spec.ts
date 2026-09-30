@@ -68,6 +68,22 @@ test("gestor cria trilha, adiciona vídeo e publica", async ({ page }) => {
     });
     await page.goto(`/t/${tr!.id}`);
     await expect(page.getByText("Trilha concluída ✓")).toBeVisible();
+
+    // atribuição: gestor atribui o espectador; ele entra no painel de conclusão
+    await page.goto(`/manage/tracks/${tr!.id}`);
+    await page
+      .locator("label", { hasText: "E2E Espectador" })
+      .getByRole("checkbox")
+      .check();
+    await page.getByRole("button", { name: /Atribuir/ }).click();
+    await expect(page.getByText("Não iniciada")).toBeVisible();
+    await expect
+      .poll(() =>
+        prisma.trackAssignment.count({
+          where: { trackId: tr!.id, userId: F.VIEWER_USER_ID },
+        }),
+      )
+      .toBe(1);
   } finally {
     await clean();
   }
