@@ -49,8 +49,9 @@ test("gestor cria trilha, adiciona vídeo e publica", async ({ page }) => {
       })
       .toBe("PUBLISHED:1");
 
-    // aparece no feed (seção Trilhas)
+    // aparece no feed, na área "Trilhas" (menu lateral)
     await page.goto("/");
+    await page.getByRole("button", { name: "Trilhas" }).click();
     await expect(page.getByRole("heading", { name: "Trilhas" })).toBeVisible();
     await expect(page.getByText(title)).toBeVisible();
 

@@ -445,3 +445,115 @@
     animation: none !important;
   }
 }
+
+/* ---- Menu lateral (áreas: Vídeos / Trilhas / Minhas obrigatórias) -------- */
+.rk-side {
+  display: none; /* oculto no mobile; vira flex em telas grandes (≥1024px) */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  width: 236px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-0) 82%, transparent);
+  padding: 18px 14px;
+  flex-direction: column;
+  gap: 4px;
+}
+@media (min-width: 1024px) {
+  .rk-side {
+    display: flex;
+  }
+}
+.rk-side-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 14px;
+}
+.rk-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-lo);
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.rk-nav-item:hover {
+  background: var(--surface-2);
+  color: var(--text-hi);
+}
+.rk-nav-item[aria-current="true"] {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.rk-nav-item svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+.rk-nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+.rk-nav-item[aria-current="true"] .rk-nav-badge {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+/* Navegação em telas pequenas: barra horizontal rolável no topo */
+.rk-nav-mobile {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 10px 0;
+}
+.rk-nav-mobile::-webkit-scrollbar {
+  display: none;
+}
+.rk-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-1) 55%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-lo);
+}
+.rk-nav-pill[aria-current="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.rk-nav-pill svg {
+  width: 16px;
+  height: 16px;
+}
+/* Em telas grandes a navegação fica no menu lateral; esconde as pílulas.
+   Precisa vir DEPOIS da definição base de .rk-nav-mobile (mesma
+   especificidade → ordem de fonte decide). */
+@media (min-width: 1024px) {
+  .rk-nav-mobile {
+    display: none;
+  }
+}

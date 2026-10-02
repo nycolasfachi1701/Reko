@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { formatDuration, cn } from "@/lib/utils";
 import { formatRelativeTime, formatViews } from "@/lib/format";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -50,6 +50,33 @@ function PlayGlyph({ size = 22 }: { size?: number }) {
     </svg>
   );
 }
+
+// Ícones do menu lateral (stroke, herdam currentColor).
+function IconVideos() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="2" y="5" width="15" height="14" rx="2.5" />
+      <path d="m17 9 5-3v12l-5-3" />
+    </svg>
+  );
+}
+function IconTracks() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+      <path d="m3 13 9 5 9-5" />
+    </svg>
+  );
+}
+function IconRequired() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3.5 14.6 9l6 .9-4.3 4.2 1 6-5.3-2.8L6.7 20l1-6L3.4 9.8l6-.8L12 3.5Z" />
+    </svg>
+  );
+}
+
+type View = "videos" | "tracks" | "required";
 
 function Card({ v }: { v: FeedVideo }) {
   const tone = TONES[hash(v.id) % TONES.length];
@@ -191,9 +218,20 @@ export function FeedExperience({
   tracks: FeedTrack[];
   user: { name: string; isManager: boolean };
 }) {
+  const [view, setView] = useState<View>("videos");
   const [q, setQ] = useState("");
   const [tag, setTag] = useState("Todos");
   const [sort, setSort] = useState<"recent" | "views" | "az">("recent");
+
+  const requiredTracks = useMemo(() => {
+    const pending = (t: FeedTrack) =>
+      t.required && t.dueDate && t.completedCount < t.videoCount
+        ? new Date(t.dueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+    return tracks
+      .filter((t) => t.required)
+      .sort((a, b) => pending(a) - pending(b));
+  }, [tracks]);
 
   const featured = useMemo(
     () => [...videos].sort((a, b) => b.views - a.views)[0] ?? null,
@@ -223,170 +261,291 @@ export function FeedExperience({
 
   const allTags = ["Todos", ...tags];
 
+  const nav: { key: View; label: string; icon: ReactNode; badge?: number }[] = [
+    { key: "videos", label: "Vídeos", icon: <IconVideos /> },
+    { key: "tracks", label: "Trilhas", icon: <IconTracks /> },
+    {
+      key: "required",
+      label: "Minhas obrigatórias",
+      icon: <IconRequired />,
+      badge: requiredTracks.length || undefined,
+    },
+  ];
+
   return (
-    <div className="min-h-screen">
-      <header className="rk-bar">
-        <div className="mx-auto flex h-[68px] max-w-6xl items-center gap-5 px-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Reko">
-            <span className="rk-glyph" aria-hidden>
-              R
-            </span>
-            <span className="font-display text-[22px] font-extrabold tracking-tight">
-              Reko            </span>
-          </Link>
-
-          <div className="rk-search relative mx-auto hidden max-w-[460px] flex-1 sm:block">
-            <svg
-              className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-fg-mut"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden
+    <div className="flex min-h-screen">
+      {/* Menu lateral (desktop) */}
+      <aside className="rk-side">
+        <Link href="/" className="rk-side-brand" aria-label="Reko">
+          <span className="rk-glyph" aria-hidden>
+            R
+          </span>
+          <span className="font-display text-[20px] font-extrabold tracking-tight">
+            Reko
+          </span>
+        </Link>
+        <nav className="flex flex-col gap-1" aria-label="Áreas">
+          {nav.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className="rk-nav-item"
+              aria-current={view === item.key}
+              onClick={() => setView(item.key)}
             >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
-            <input
-              type="search"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por título ou tag…"
-              aria-label="Buscar vídeos"
-            />
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <ThemeToggle />
-            {user.isManager ? (
-              <Link
-                href="/manage"
-                className="hidden rounded-sm border border-[var(--border-strong)] bg-surface-1 px-3 py-2 text-sm text-fg-lo transition-colors hover:bg-surface-2 hover:text-fg-hi sm:block"
-              >
-                Gestão →
-              </Link>
-            ) : null}
-            <span
-              className="grid h-10 w-10 place-items-center rounded-full border border-[var(--border-strong)] text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg,#ff8a3d,#ff5a00)" }}
-              title={user.name}
-            >
-              {initials(user.name)}
-            </span>
-            <LogoutButton />
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-6 pb-16">
-        <div className="rk-search relative py-4 sm:hidden">
-          <svg
-            className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-fg-mut"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden
+              {item.icon}
+              <span>{item.label}</span>
+              {item.badge ? <span className="rk-nav-badge">{item.badge}</span> : null}
+            </button>
+          ))}
+        </nav>
+        {user.isManager ? (
+          <Link
+            href="/manage"
+            className="rk-nav-item mt-auto"
           >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar…"
-            aria-label="Buscar vídeos"
-          />
-        </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M3 3v18h18" />
+              <rect x="7" y="12" width="3" height="6" rx="1" />
+              <rect x="13" y="8" width="3" height="10" rx="1" />
+            </svg>
+            <span>Gestão</span>
+          </Link>
+        ) : null}
+      </aside>
 
-        <div className="flex flex-wrap items-center gap-3 py-5">
-          <div className="flex flex-1 flex-wrap gap-2" role="group" aria-label="Filtrar por tag">
-            {allTags.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className="rk-chip"
-                aria-pressed={tag === t}
-                onClick={() => setTag(t)}
+      {/* Coluna principal */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="rk-bar">
+          <div className="mx-auto flex h-[68px] max-w-6xl items-center gap-5 px-6">
+            <Link
+              href="/"
+              className="flex shrink-0 items-center gap-2.5 lg:hidden"
+              aria-label="Reko"
+            >
+              <span className="rk-glyph" aria-hidden>
+                R
+              </span>
+              <span className="font-display text-[22px] font-extrabold tracking-tight">
+                Reko
+              </span>
+            </Link>
+
+            {view === "videos" ? (
+              <div className="rk-search relative mx-auto hidden max-w-[460px] flex-1 sm:block">
+                <svg
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-fg-mut"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                <input
+                  type="search"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar por título ou tag…"
+                  aria-label="Buscar vídeos"
+                />
+              </div>
+            ) : (
+              <div className="mx-auto hidden flex-1 sm:block" />
+            )}
+
+            <div className="flex shrink-0 items-center gap-2">
+              <ThemeToggle />
+              <span
+                className="grid h-10 w-10 place-items-center rounded-full border border-[var(--border-strong)] text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg,#ff8a3d,#ff5a00)" }}
+                title={user.name}
               >
-                {t}
+                {initials(user.name)}
+              </span>
+              <LogoutButton />
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto w-full max-w-6xl px-6 pb-16">
+          {/* Navegação (mobile): pílulas roláveis */}
+          <nav className="rk-nav-mobile" aria-label="Áreas">
+            {nav.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className="rk-nav-pill"
+                aria-current={view === item.key}
+                onClick={() => setView(item.key)}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+                {item.badge ? <span className="rk-nav-badge">{item.badge}</span> : null}
               </button>
             ))}
-          </div>
-          <label className="rk-sort flex items-center gap-2 text-[13px] text-fg-mut">
-            Ordenar
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as typeof sort)}
-              aria-label="Ordenar vídeos"
-            >
-              <option value="recent">Mais recentes</option>
-              <option value="views">Mais vistos</option>
-              <option value="az">Título (A–Z)</option>
-            </select>
-          </label>
-        </div>
+          </nav>
 
-        {showHero && featured ? (
-          <Link href={`/v/${featured.id}`} className="rk-hero mb-9 block animate-in">
-            <span className="rk-hero-play" aria-hidden>
-              <PlayGlyph size={26} />
-            </span>
-            <div className="relative z-[2] max-w-[620px] p-10">
-              <span className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#ffb480]">
-                <span className="h-[7px] w-[7px] rounded-full bg-brand shadow-[0_0_0_4px_rgba(255,102,0,0.25)]" />
-                Em destaque
-              </span>
-              <h1 className="mb-3 font-display text-[clamp(28px,4vw,44px)] font-extrabold leading-[1.03] tracking-tight text-white">
-                {featured.title}
-              </h1>
-              <p className="mb-5 max-w-[46ch] text-[15px] text-[#d9d2c9]">
-                {formatViews(featured.views)} · {formatDuration(featured.durationSec)} ·{" "}
-                {formatRelativeTime(new Date(featured.publishedAt))}
-              </p>
-            </div>
-          </Link>
-        ) : null}
+          {view === "videos" ? (
+            <>
+              <div className="rk-search relative py-4 sm:hidden">
+                <svg
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-fg-mut"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                <input
+                  type="search"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Buscar…"
+                  aria-label="Buscar vídeos"
+                />
+              </div>
 
-        {q.trim() === "" && tracks.length > 0 ? (
-          <section className="mb-9">
-            <div className="mb-4 flex items-baseline justify-between">
-              <h2 className="font-display text-xl font-bold tracking-tight">Trilhas</h2>
-              <span className="text-[13px] text-fg-mut tabular-nums">
-                {tracks.length} {tracks.length === 1 ? "trilha" : "trilhas"}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-x-[22px] gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
-              {tracks.map((t) => (
-                <TrackCard key={t.id} t={t} />
-              ))}
-            </div>
-          </section>
-        ) : null}
+              <div className="flex flex-wrap items-center gap-3 py-5">
+                <div
+                  className="flex flex-1 flex-wrap gap-2"
+                  role="group"
+                  aria-label="Filtrar por tag"
+                >
+                  {allTags.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      className="rk-chip"
+                      aria-pressed={tag === t}
+                      onClick={() => setTag(t)}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <label className="rk-sort flex items-center gap-2 text-[13px] text-fg-mut">
+                  Ordenar
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as typeof sort)}
+                    aria-label="Ordenar vídeos"
+                  >
+                    <option value="recent">Mais recentes</option>
+                    <option value="views">Mais vistos</option>
+                    <option value="az">Título (A–Z)</option>
+                  </select>
+                </label>
+              </div>
 
-        <div className="mb-4 flex items-baseline justify-between">
-          <h2 className="font-display text-xl font-bold tracking-tight">
-            {tag === "Todos" ? "Todos os vídeos" : tag}
-          </h2>
-          <span className="text-[13px] text-fg-mut tabular-nums">
-            {list.length} {list.length === 1 ? "vídeo" : "vídeos"}
-          </span>
-        </div>
+              {showHero && featured ? (
+                <Link href={`/v/${featured.id}`} className="rk-hero mb-9 block animate-in">
+                  <span className="rk-hero-play" aria-hidden>
+                    <PlayGlyph size={26} />
+                  </span>
+                  <div className="relative z-[2] max-w-[620px] p-10">
+                    <span className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#ffb480]">
+                      <span className="h-[7px] w-[7px] rounded-full bg-brand shadow-[0_0_0_4px_rgba(255,102,0,0.25)]" />
+                      Em destaque
+                    </span>
+                    <h1 className="mb-3 font-display text-[clamp(28px,4vw,44px)] font-extrabold leading-[1.03] tracking-tight text-white">
+                      {featured.title}
+                    </h1>
+                    <p className="mb-5 max-w-[46ch] text-[15px] text-[#d9d2c9]">
+                      {formatViews(featured.views)} · {formatDuration(featured.durationSec)} ·{" "}
+                      {formatRelativeTime(new Date(featured.publishedAt))}
+                    </p>
+                  </div>
+                </Link>
+              ) : null}
 
-        {list.length === 0 ? (
-          <div className="rounded-lg border border-[var(--border)] bg-surface-1 p-16 text-center">
-            <p className="font-semibold text-fg-hi">Nenhum vídeo encontrado</p>
-            <p className="mt-1 text-sm text-fg-mut">Tente outra busca ou remova os filtros.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-x-[22px] gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((v) => (
-              <Card key={v.id} v={v} />
-            ))}
-          </div>
-        )}
-      </main>
+              <div className="mb-4 flex items-baseline justify-between">
+                <h2 className="font-display text-xl font-bold tracking-tight">
+                  {tag === "Todos" ? "Todos os vídeos" : tag}
+                </h2>
+                <span className="text-[13px] text-fg-mut tabular-nums">
+                  {list.length} {list.length === 1 ? "vídeo" : "vídeos"}
+                </span>
+              </div>
+
+              {list.length === 0 ? (
+                <div className="rounded-lg border border-[var(--border)] bg-surface-1 p-16 text-center">
+                  <p className="font-semibold text-fg-hi">Nenhum vídeo encontrado</p>
+                  <p className="mt-1 text-sm text-fg-mut">
+                    Tente outra busca ou remova os filtros.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-x-[22px] gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+                  {list.map((v) => (
+                    <Card key={v.id} v={v} />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : null}
+
+          {view === "tracks" ? (
+            <section className="pt-6">
+              <div className="mb-4 flex items-baseline justify-between">
+                <h2 className="font-display text-xl font-bold tracking-tight">Trilhas</h2>
+                <span className="text-[13px] text-fg-mut tabular-nums">
+                  {tracks.length} {tracks.length === 1 ? "trilha" : "trilhas"}
+                </span>
+              </div>
+              {tracks.length === 0 ? (
+                <div className="rounded-lg border border-[var(--border)] bg-surface-1 p-16 text-center">
+                  <p className="font-semibold text-fg-hi">Nenhuma trilha publicada</p>
+                  <p className="mt-1 text-sm text-fg-mut">
+                    As trilhas aparecem aqui assim que forem publicadas.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-[22px] gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
+                  {tracks.map((t) => (
+                    <TrackCard key={t.id} t={t} />
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {view === "required" ? (
+            <section className="pt-6">
+              <div className="mb-4 flex items-baseline justify-between">
+                <h2 className="font-display text-xl font-bold tracking-tight">
+                  Minhas obrigatórias
+                </h2>
+                <span className="text-[13px] text-fg-mut tabular-nums">
+                  {requiredTracks.length}{" "}
+                  {requiredTracks.length === 1 ? "trilha" : "trilhas"}
+                </span>
+              </div>
+              {requiredTracks.length === 0 ? (
+                <div className="rounded-lg border border-[var(--border)] bg-surface-1 p-16 text-center">
+                  <p className="font-semibold text-fg-hi">
+                    Nenhuma trilha obrigatória 🎉
+                  </p>
+                  <p className="mt-1 text-sm text-fg-mut">
+                    Quando um gestor atribuir uma trilha a você, ela aparece aqui.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-[22px] gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
+                  {requiredTracks.map((t) => (
+                    <TrackCard key={t.id} t={t} />
+                  ))}
+                </div>
+              )}
+            </section>
+          ) : null}
+        </main>
+      </div>
     </div>
   );
 }
