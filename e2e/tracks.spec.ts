@@ -70,6 +70,14 @@ test("gestor cria trilha, adiciona vídeo e publica", async ({ page }) => {
     await page.goto(`/t/${tr!.id}`);
     await expect(page.getByText("Trilha concluída ✓")).toBeVisible();
 
+    // certificado (T4): botão visível e rota devolve um PDF
+    await expect(
+      page.getByRole("link", { name: "Baixar certificado" }),
+    ).toBeVisible();
+    const cert = await page.request.get(`/t/${tr!.id}/certificate`);
+    expect(cert.status()).toBe(200);
+    expect(cert.headers()["content-type"]).toContain("application/pdf");
+
     // atribuição: gestor atribui o espectador; ele entra no painel de conclusão
     await page.goto(`/manage/tracks/${tr!.id}`);
     await page

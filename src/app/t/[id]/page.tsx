@@ -179,7 +179,31 @@ export default async function TrackPage({
                   {completedCount === 0 ? "Começar trilha" : "Continuar"}
                 </Link>
               ) : (
-                <span className="text-sm font-medium text-positive">Trilha concluída ✓</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-sm font-medium text-positive">
+                    Trilha concluída ✓
+                  </span>
+                  <a
+                    href={`/t/${track.id}/certificate`}
+                    className="inline-flex items-center gap-2 rounded-sm border border-[var(--border-strong)] bg-surface-1 px-4 py-2 text-sm font-medium text-fg-hi transition-colors hover:bg-surface-2"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+                      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                    </svg>
+                    Baixar certificado
+                  </a>
+                </div>
               )}
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
