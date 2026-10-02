@@ -3,7 +3,6 @@ import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
 import { Card } from "@/components/ui";
-import { ManageHeader } from "../manage-header";
 import { CreateUserForm } from "./create-user-form";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -15,7 +14,7 @@ const ROLE_LABEL: Record<Role, string> = {
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
-  const user = await requireRole([Role.ADMIN]);
+  await requireRole([Role.ADMIN]);
 
   const users = await db.user.findMany({
     orderBy: [{ role: "asc" }, { createdAt: "desc" }],
@@ -24,7 +23,6 @@ export default async function UsersPage() {
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <Link
           href="/manage"

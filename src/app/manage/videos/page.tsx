@@ -5,13 +5,12 @@ import { db } from "@/lib/db";
 import { Button, Card } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDuration } from "@/lib/utils";
-import { ManageHeader } from "../manage-header";
 import { VideoRowActions } from "./video-row-actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function VideosPage() {
-  const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  await requireRole([Role.MANAGER, Role.ADMIN]);
 
   const videos = await db.video.findMany({
     orderBy: { createdAt: "desc" },
@@ -20,7 +19,6 @@ export default async function VideosPage() {
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>

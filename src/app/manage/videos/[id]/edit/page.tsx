@@ -4,7 +4,6 @@ import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
 import { Card } from "@/components/ui";
-import { ManageHeader } from "../../../manage-header";
 import { EditVideoForm } from "./edit-form";
 
 export default async function EditVideoPage({
@@ -12,7 +11,7 @@ export default async function EditVideoPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  await requireRole([Role.MANAGER, Role.ADMIN]);
   const { id } = await params;
 
   const video = await db.video.findUnique({
@@ -23,7 +22,6 @@ export default async function EditVideoPage({
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <Link
           href="/manage/videos"

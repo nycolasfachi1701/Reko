@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
-import { ManageHeader } from "../../manage-header";
 import { TrackEditor } from "./track-editor";
 import { TrackAssignments } from "./track-assignments";
 
@@ -14,7 +13,7 @@ export default async function TrackEditorPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  await requireRole([Role.MANAGER, Role.ADMIN]);
   const { id } = await params;
 
   const track = await db.track.findUnique({
@@ -90,7 +89,6 @@ export default async function TrackEditorPage({
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <Link
           href="/manage/tracks"

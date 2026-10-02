@@ -6,7 +6,6 @@ import { variation } from "@/lib/analytics";
 import { formatViews } from "@/lib/format";
 import { Card } from "@/components/ui";
 import { Counter } from "@/components/counter";
-import { ManageHeader } from "./manage-header";
 import { DashboardTable } from "./dashboard-table";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +60,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<{ period?: string }>;
 }) {
-  const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  await requireRole([Role.MANAGER, Role.ADMIN]);
   const { period: periodParam } = await searchParams;
   const period = PERIODS.includes(Number(periodParam)) ? Number(periodParam) : 30;
 
@@ -70,7 +69,6 @@ export default async function DashboardPage({
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">Painel de desempenho</h1>

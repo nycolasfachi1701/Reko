@@ -2,15 +2,13 @@ import Link from "next/link";
 import { Role } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { Card } from "@/components/ui";
-import { ManageHeader } from "../manage-header";
 import { UploadForm } from "./upload-form";
 
 export default async function UploadPage() {
-  const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  await requireRole([Role.MANAGER, Role.ADMIN]);
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <Link
           href="/manage/videos"

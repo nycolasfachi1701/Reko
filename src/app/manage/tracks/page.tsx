@@ -3,7 +3,6 @@ import { Role, TrackStatus } from "@prisma/client";
 import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
 import { Card } from "@/components/ui";
-import { ManageHeader } from "../manage-header";
 import { CreateTrackForm } from "./create-track-form";
 
 const STATUS_LABEL: Record<TrackStatus, string> = {
@@ -15,7 +14,7 @@ const STATUS_LABEL: Record<TrackStatus, string> = {
 export const dynamic = "force-dynamic";
 
 export default async function TracksPage() {
-  const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  await requireRole([Role.MANAGER, Role.ADMIN]);
 
   const tracks = await db.track.findMany({
     orderBy: { createdAt: "desc" },
@@ -29,7 +28,6 @@ export default async function TracksPage() {
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <Link
           href="/manage"

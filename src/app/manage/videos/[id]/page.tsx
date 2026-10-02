@@ -15,7 +15,6 @@ import { Button, Card } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
 import { BarSeries } from "@/components/charts/bar-series";
 import { RetentionChart } from "@/components/charts/retention-chart";
-import { ManageHeader } from "../../manage-header";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +49,7 @@ export default async function VideoDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireRole([Role.MANAGER, Role.ADMIN]);
+  await requireRole([Role.MANAGER, Role.ADMIN]);
   const { id } = await params;
 
   const video = await db.video.findUnique({
@@ -78,7 +77,6 @@ export default async function VideoDetailPage({
 
   return (
     <>
-      <ManageHeader user={user} />
       <main className="mx-auto max-w-4xl px-6 py-8">
         <Link
           href="/manage/videos"
