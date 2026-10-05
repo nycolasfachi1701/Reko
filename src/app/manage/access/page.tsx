@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
 import { Card } from "@/components/ui";
 import { CreateUserForm } from "./create-user-form";
+import { BulkImport } from "./bulk-import";
 
 const ROLE_LABEL: Record<Role, string> = {
   VIEWER: "Espectador",
@@ -37,8 +38,12 @@ export default async function UsersPage() {
           e-mail e senha.
         </p>
 
-        <Card className="mb-8 p-6">
+        <Card className="mb-6 p-6">
           <CreateUserForm />
+        </Card>
+
+        <Card className="mb-8 p-6">
+          <BulkImport />
         </Card>
 
         <Card className="divide-y divide-[var(--border)]">
