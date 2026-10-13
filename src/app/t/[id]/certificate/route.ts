@@ -26,8 +26,15 @@ export async function GET(
     select: {
       title: true,
       status: true,
-      modules: { select: { items: { select: { videoId: true } } } },
-      items: { where: { moduleId: null }, select: { videoId: true } },
+      modules: {
+        select: {
+          items: { select: { videoId: true, video: { select: { status: true } } } },
+        },
+      },
+      items: {
+        where: { moduleId: null },
+        select: { videoId: true, video: { select: { status: true } } },
+      },
     },
   });
   if (!track) return new NextResponse("Trilha não encontrada", { status: 404 });
@@ -37,10 +44,14 @@ export async function GET(
     return new NextResponse("Trilha não encontrada", { status: 404 });
   }
 
-  const videoIds = [
-    ...track.modules.flatMap((m) => m.items.map((i) => i.videoId)),
-    ...track.items.map((i) => i.videoId),
+  // só vídeos publicados contam (coerente com /t/[id] e com o feed)
+  const allItems = [
+    ...track.modules.flatMap((m) => m.items),
+    ...track.items,
   ];
+  const videoIds = allItems
+    .filter((i) => i.video.status === "PUBLISHED")
+    .map((i) => i.videoId);
   const total = videoIds.length;
   const completed = await completedAmong(user.id, videoIds);
 
@@ -56,12 +67,19 @@ export async function GET(
     select: { lastBeatAt: true },
   });
 
-  const pdf = await buildCertificatePdf({
-    userName: user.name,
-    trackTitle: track.title,
-    completedAt: last?.lastBeatAt ?? new Date(),
-    videoCount: total,
-  });
+  let pdf: Uint8Array;
+  try {
+    pdf = await buildCertificatePdf({
+      userName: user.name,
+      trackTitle: track.title,
+      completedAt: last?.lastBeatAt ?? new Date(),
+      videoCount: total,
+    });
+  } catch {
+    return new NextResponse("Não foi possível gerar o certificado.", {
+      status: 500,
+    });
+  }
 
   const slug =
     track.title

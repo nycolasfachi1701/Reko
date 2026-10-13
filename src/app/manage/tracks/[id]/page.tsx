@@ -37,7 +37,9 @@ export default async function TrackEditorPage({
   });
   if (!track) notFound();
 
+  // só vídeos publicados podem ser adicionados a uma trilha (ver addItem)
   const videos = await db.video.findMany({
+    where: { status: "PUBLISHED" },
     orderBy: { createdAt: "desc" },
     select: { id: true, title: true, durationSec: true },
   });

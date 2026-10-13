@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Input, Label } from "@/components/ui";
+import { isOverdue, formatDueDate } from "@/lib/due-date";
 import { assignUsers, unassign } from "../actions";
 
 interface Assignee {
@@ -61,9 +62,6 @@ export function TrackAssignments({
     if (a.completed > 0) return { label: `${a.completed}/${totalVideos}`, tone: "doing" };
     return { label: "Não iniciada", tone: "none" };
   }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   return (
     <section className="mt-10">
@@ -142,8 +140,7 @@ export function TrackAssignments({
         <Card className="divide-y divide-[var(--border)]">
           {assignees.map((a) => {
             const s = statusOf(a);
-            const overdue =
-              a.dueDate != null && s.tone !== "done" && new Date(a.dueDate) < today;
+            const overdue = isOverdue(a.dueDate, s.tone === "done");
             return (
               <div key={a.id} className="flex items-center justify-between gap-3 p-3.5">
                 <div className="min-w-0">
@@ -153,7 +150,7 @@ export function TrackAssignments({
                     {a.dueDate ? (
                       <span className={overdue ? "text-negative" : ""}>
                         {" · prazo "}
-                        {new Date(a.dueDate).toLocaleDateString("pt-BR")}
+                        {formatDueDate(a.dueDate)}
                         {overdue ? " (vencido)" : ""}
                       </span>
                     ) : null}

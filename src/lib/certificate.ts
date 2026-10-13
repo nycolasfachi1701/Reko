@@ -21,11 +21,29 @@ function formatDatePt(d: Date): string {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(d);
 }
 
+// As fontes padrão (Helvetica/WinAnsi) do PDF só cobrem Latin-1; um nome ou
+// título com emoji/CJK/etc. faria o pdf-lib lançar exceção (→ 500). Normaliza
+// pontuação tipográfica para ASCII e remove o que a fonte não cobre.
+function winAnsiSafe(s: string, fallback: string): string {
+  const out = s
+    .normalize("NFC")
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    .replace(/[–—―]/g, "-")
+    .replace(/…/g, "...")
+    .replace(/[^\x20-\x7E -ÿ]/g, "")
+    .trim();
+  return out || fallback;
+}
+
 export async function buildCertificatePdf(
   data: CertificateData,
 ): Promise<Uint8Array> {
+  const userName = winAnsiSafe(data.userName, "Usuário");
+  const trackTitle = winAnsiSafe(data.trackTitle, "Trilha");
+
   const doc = await PDFDocument.create();
-  doc.setTitle(`Certificado — ${data.trackTitle}`);
+  doc.setTitle(`Certificado — ${trackTitle}`);
   doc.setAuthor("Reko");
 
   const page = doc.addPage([842, 595]); // A4 paisagem (pt)
@@ -113,9 +131,9 @@ export async function buildCertificatePdf(
 
   // Corpo
   center("Certificamos que", height - 240, 14, font, MUTED);
-  center(data.userName, height - 290, 34, bold, INK);
+  center(userName, height - 290, 34, bold, INK);
   center("concluiu com êxito a trilha", height - 330, 14, font, MUTED);
-  center(data.trackTitle, height - 372, 22, bold, INK);
+  center(trackTitle, height - 372, 22, bold, INK);
 
   // Rodapé: data + quantidade de vídeos
   const plural = data.videoCount === 1 ? "vídeo" : "vídeos";

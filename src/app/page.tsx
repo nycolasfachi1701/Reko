@@ -76,14 +76,19 @@ const getPublishedTracks = unstable_cache(
         id: true,
         title: true,
         coverUrl: true,
-        items: { select: { videoId: true } },
+        // só vídeos publicados contam para o progresso da trilha (um vídeo em
+        // rascunho/arquivado não é assistível) — mesma regra do /t/[id] e do
+        // certificado, senão o progresso fica inconsistente entre as telas.
+        items: { select: { videoId: true, video: { select: { status: true } } } },
       },
     });
     return tracks.map((t) => ({
       id: t.id,
       title: t.title,
       coverUrl: t.coverUrl,
-      videoIds: t.items.map((i) => i.videoId),
+      videoIds: t.items
+        .filter((i) => i.video.status === "PUBLISHED")
+        .map((i) => i.videoId),
     }));
   },
   ["published-tracks"],

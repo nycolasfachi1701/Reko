@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Role, TrackStatus } from "@prisma/client";
+import { Role, TrackStatus, VideoStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
 import { formatDuration, cn } from "@/lib/utils";
 import { completedAmong } from "@/lib/tracks-progress";
+import { isOverdue, formatDueDate } from "@/lib/due-date";
 
 export const dynamic = "force-dynamic";
 
@@ -32,14 +33,18 @@ export default async function TrackPage({
         include: {
           items: {
             orderBy: { order: "asc" },
-            include: { video: { select: { id: true, title: true, durationSec: true } } },
+            include: {
+              video: { select: { id: true, title: true, durationSec: true, status: true } },
+            },
           },
         },
       },
       items: {
         where: { moduleId: null },
         orderBy: { order: "asc" },
-        include: { video: { select: { id: true, title: true, durationSec: true } } },
+        include: {
+          video: { select: { id: true, title: true, durationSec: true, status: true } },
+        },
       },
     },
   });
@@ -48,11 +53,20 @@ export default async function TrackPage({
   const isManager = user.role === Role.MANAGER || user.role === Role.ADMIN;
   if (track.status !== TrackStatus.PUBLISHED && !isManager) notFound();
 
+  // Só contam/aparecem vídeos publicados: um vídeo em rascunho/arquivado não é
+  // assistível (dá notFound para o espectador), então não pode entrar no
+  // denominador nem travar a conclusão/certificado. Mesma regra no feed e no
+  // certificado.
+  const isPub = (it: { video: { status: VideoStatus } }) =>
+    it.video.status === VideoStatus.PUBLISHED;
+  const modules = track.modules.map((m) => ({ ...m, items: m.items.filter(isPub) }));
+  const looseItems = track.items.filter(isPub);
+
   const totalVideos =
-    track.modules.reduce((n, m) => n + m.items.length, 0) + track.items.length;
+    modules.reduce((n, m) => n + m.items.length, 0) + looseItems.length;
 
   // progresso (deriva de ViewSession.completed)
-  const flat = [...track.modules.flatMap((m) => m.items), ...track.items];
+  const flat = [...modules.flatMap((m) => m.items), ...looseItems];
   const completed = await completedAmong(
     user.id,
     flat.map((it) => it.video.id),
@@ -66,10 +80,10 @@ export default async function TrackPage({
     where: { trackId_userId: { trackId: id, userId: user.id } },
     select: { dueDate: true },
   });
-  const overdue =
-    assignment?.dueDate != null &&
-    completedCount < totalVideos &&
-    new Date(assignment.dueDate) < new Date();
+  const overdue = isOverdue(
+    assignment?.dueDate ?? null,
+    completedCount >= totalVideos,
+  );
 
   // numeração contínua ao longo da trilha (aula 1..N)
   let n = 0;
@@ -126,7 +140,7 @@ export default async function TrackPage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         {track.status !== TrackStatus.PUBLISHED ? (
           <p className="mb-3 inline-block rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs text-brand">
             Prévia — esta trilha ainda não está publicada.
@@ -154,7 +168,7 @@ export default async function TrackPage({
           {assignment?.dueDate ? (
             <span className={overdue ? "text-negative" : "text-fg-mut"}>
               {" · prazo "}
-              {new Date(assignment.dueDate).toLocaleDateString("pt-BR")}
+              {formatDueDate(assignment.dueDate)}
               {overdue ? " (vencido)" : ""}
             </span>
           ) : null}
@@ -213,7 +227,7 @@ export default async function TrackPage({
         ) : null}
 
         <div className="mt-8 flex flex-col gap-6">
-          {track.modules.map((m) => (
+          {modules.map((m) => (
             <section key={m.id}>
               <h2 className="mb-2 font-display text-lg font-bold">{m.title}</h2>
               <div className="rk-surface flex flex-col rounded-xl p-1.5">
@@ -226,13 +240,13 @@ export default async function TrackPage({
             </section>
           ))}
 
-          {track.items.length > 0 ? (
+          {looseItems.length > 0 ? (
             <section>
-              {track.modules.length > 0 ? (
+              {modules.length > 0 ? (
                 <h2 className="mb-2 font-display text-lg font-bold">Outros vídeos</h2>
               ) : null}
               <div className="rk-surface flex flex-col rounded-xl p-1.5">
-                {track.items.map((it) => VideoRow(it))}
+                {looseItems.map((it) => VideoRow(it))}
               </div>
             </section>
           ) : null}

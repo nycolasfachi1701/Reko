@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { formatDuration, cn } from "@/lib/utils";
 import { formatRelativeTime, formatViews } from "@/lib/format";
+import { isOverdue, formatDueDate } from "@/lib/due-date";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LogoutButton } from "@/components/logout-button";
 
@@ -194,12 +195,12 @@ function TrackCard({ t }: { t: FeedTrack }) {
           <p
             className={cn(
               "mt-1 text-[12px] tabular-nums",
-              new Date(t.dueDate) < new Date() && t.completedCount < t.videoCount
+              isOverdue(t.dueDate, t.completedCount >= t.videoCount)
                 ? "text-negative"
                 : "text-fg-mut",
             )}
           >
-            Prazo: {new Date(t.dueDate).toLocaleDateString("pt-BR")}
+            Prazo: {formatDueDate(t.dueDate)}
           </p>
         ) : null}
       </div>
@@ -370,7 +371,16 @@ export function FeedExperience({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-6 pb-16">
+        <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl px-6 pb-16">
+          {/* Um h1 por estado (área atual), para leitor de tela. */}
+          <h1 className="sr-only">
+            {view === "videos"
+              ? "Vídeos"
+              : view === "tracks"
+                ? "Trilhas"
+                : "Minhas obrigatórias"}
+          </h1>
+
           {/* Navegação (mobile): pílulas roláveis */}
           <nav className="rk-nav-mobile" aria-label="Áreas">
             {nav.map((item) => (
@@ -453,9 +463,9 @@ export function FeedExperience({
                       <span className="h-[7px] w-[7px] rounded-full bg-brand shadow-[0_0_0_4px_rgba(255,102,0,0.25)]" />
                       Em destaque
                     </span>
-                    <h1 className="mb-3 font-display text-[clamp(28px,4vw,44px)] font-extrabold leading-[1.03] tracking-tight text-white">
+                    <h2 className="mb-3 font-display text-[clamp(28px,4vw,44px)] font-extrabold leading-[1.03] tracking-tight text-white">
                       {featured.title}
-                    </h1>
+                    </h2>
                     <p className="mb-5 max-w-[46ch] text-[15px] text-[#d9d2c9]">
                       {formatViews(featured.views)} · {formatDuration(featured.durationSec)} ·{" "}
                       {formatRelativeTime(new Date(featured.publishedAt))}
