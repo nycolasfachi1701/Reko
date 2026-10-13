@@ -213,7 +213,11 @@ function Composer({
             Cancelar
           </Button>
         ) : null}
-        {error ? <span className="text-xs text-negative">{error}</span> : null}
+        {error ? (
+          <span role="alert" className="text-xs text-negative">
+            {error}
+          </span>
+        ) : null}
         {text.length > 1600 ? (
           <span className="ml-auto text-xs tabular-nums text-fg-mut">{text.length}/2000</span>
         ) : null}

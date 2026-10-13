@@ -106,6 +106,7 @@ export function BulkImport() {
         <input
           ref={inputRef}
           type="file"
+          aria-label="Planilha de usuários (.xlsx)"
           accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onChange={() => setError(null)}
           className="block max-w-full text-sm text-fg-lo file:mr-3 file:cursor-pointer file:rounded-sm file:border-0 file:bg-surface-2 file:px-3 file:py-2 file:text-sm file:font-medium file:text-fg-hi hover:file:bg-surface-3"

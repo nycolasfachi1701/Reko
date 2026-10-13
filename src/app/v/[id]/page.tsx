@@ -205,7 +205,7 @@ export default async function WatchPage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           {/* Coluna principal */}
           <div className="min-w-0">

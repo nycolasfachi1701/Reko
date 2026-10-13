@@ -18,7 +18,7 @@ export default async function LoginPage({
   const safeNext = next?.startsWith("/manage") ? next : "/manage";
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center px-6 py-16">
+    <main id="main" tabIndex={-1} className="relative flex min-h-screen items-center justify-center px-6 py-16">
       <div className="absolute right-6 top-6">
         <ThemeToggle />
       </div>

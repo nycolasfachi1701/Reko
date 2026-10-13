@@ -327,6 +327,7 @@ function AddVideo({
         value={videoId}
         onChange={(e) => setVideoId(e.target.value)}
         disabled={pending}
+        aria-label="Adicionar vídeo à trilha"
         className="h-9 min-w-0 flex-1 rounded-sm border border-[var(--border)] bg-surface-2 px-2 text-sm text-fg-hi outline-none focus:border-brand"
       >
         <option value="">Adicionar vídeo…</option>
@@ -388,6 +389,7 @@ function AddModule({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Novo módulo (ex.: Módulo 1 — Introdução)"
+        aria-label="Nome do novo módulo"
         disabled={pending}
       />
       <Button

@@ -36,6 +36,12 @@ export default function RootLayout({
     >
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:border focus:border-[var(--border-strong)] focus:bg-surface-1 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-fg-hi"
+        >
+          Pular para o conteúdo
+        </a>
         {children}
       </body>
     </html>

@@ -53,7 +53,9 @@ export default async function ManageLayout({
 
         <ManageMobileNav isAdmin={isAdmin} />
 
-        {children}
+        <div id="main" tabIndex={-1}>
+          {children}
+        </div>
       </div>
     </div>
   );
