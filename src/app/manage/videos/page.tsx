@@ -12,10 +12,16 @@ export const dynamic = "force-dynamic";
 export default async function VideosPage() {
   await requireRole([Role.MANAGER, Role.ADMIN]);
 
-  const videos = await db.video.findMany({
+  // cap de segurança: evita renderizar uma lista ilimitada. Busca LIMIT+1 para
+  // saber se há mais sem uma segunda query de contagem.
+  const LIMIT = 500;
+  const rows = await db.video.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { viewSessions: true } } },
+    take: LIMIT + 1,
   });
+  const truncated = rows.length > LIMIT;
+  const videos = truncated ? rows.slice(0, LIMIT) : rows;
 
   return (
     <>
@@ -25,6 +31,7 @@ export default async function VideosPage() {
             <h1 className="text-2xl font-bold">Vídeos</h1>
             <p className="mt-1 text-sm text-fg-lo">
               {videos.length} {videos.length === 1 ? "vídeo" : "vídeos"}
+              {truncated ? " · mostrando os 500 mais recentes" : ""}
             </p>
           </div>
           <Link href="/manage/upload">

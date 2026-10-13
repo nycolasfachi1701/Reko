@@ -68,8 +68,11 @@ export async function POST(req: NextRequest) {
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "Envie um arquivo .xlsx." }, { status: 400 });
   }
-  if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: "Arquivo muito grande (máx. 5 MB)." }, { status: 400 });
+  // teto baixo no arquivo COMPRIMIDO: um .xlsx de 1000 linhas × 3 colunas tem
+  // dezenas de KB, então 2 MB é folgado e limita o pior caso de descompressão
+  // (zip bomb) antes de o ExcelJS carregar tudo em memória.
+  if (file.size > 2 * 1024 * 1024) {
+    return NextResponse.json({ error: "Arquivo muito grande (máx. 2 MB)." }, { status: 400 });
   }
 
   let rows: ParsedRow[];

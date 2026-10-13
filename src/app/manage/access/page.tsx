@@ -17,10 +17,16 @@ export const dynamic = "force-dynamic";
 export default async function UsersPage() {
   await requireRole([Role.ADMIN]);
 
-  const users = await db.user.findMany({
+  // cap de segurança: a importação em massa pode criar muitos usuários; busca
+  // LIMIT+1 para detectar truncamento sem uma query de contagem extra.
+  const LIMIT = 500;
+  const rows = await db.user.findMany({
     orderBy: [{ role: "asc" }, { createdAt: "desc" }],
     select: { id: true, name: true, email: true, role: true },
+    take: LIMIT + 1,
   });
+  const truncated = rows.length > LIMIT;
+  const users = truncated ? rows.slice(0, LIMIT) : rows;
 
   return (
     <>
@@ -70,6 +76,11 @@ export default async function UsersPage() {
             </Link>
           ))}
         </Card>
+        {truncated ? (
+          <p className="mt-3 text-xs text-fg-mut">
+            Mostrando os 500 usuários mais recentes.
+          </p>
+        ) : null}
       </main>
     </>
   );

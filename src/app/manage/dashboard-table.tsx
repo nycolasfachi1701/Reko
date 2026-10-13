@@ -36,6 +36,17 @@ export function DashboardTable({ rows }: { rows: DashboardRow[] }) {
 
   const arrow = (key: SortKey) => (sort === key ? (dir === "asc" ? " ↑" : " ↓") : "");
 
+  // Alternativa textual do sparkline para leitor de tela (compara as duas
+  // metades da janela para dar a direção).
+  function trendLabel(values: number[]): string {
+    if (values.length < 2) return "Tendência: sem dados suficientes";
+    const mid = Math.floor(values.length / 2);
+    const a = values.slice(0, mid).reduce((s, x) => s + x, 0);
+    const b = values.slice(mid).reduce((s, x) => s + x, 0);
+    const dir = b > a ? "em alta" : b < a ? "em queda" : "estável";
+    return `Tendência de views: ${dir}`;
+  }
+
   if (rows.length === 0) {
     return <p className="text-sm text-fg-lo">Nenhum vídeo ainda.</p>;
   }
@@ -72,7 +83,7 @@ export function DashboardTable({ rows }: { rows: DashboardRow[] }) {
               </td>
               <td className="py-2 pr-4 text-right tabular-nums">{v.views}</td>
               <td className="py-2">
-                <Sparkline values={v.sparkline} />
+                <Sparkline values={v.sparkline} label={trendLabel(v.sparkline)} />
               </td>
             </tr>
           ))}
