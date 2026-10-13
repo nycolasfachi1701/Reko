@@ -58,11 +58,14 @@ export default async function VideoDetailPage({
   });
   if (!video) notFound();
 
-  const stats = await videoDetailStats(id);
-  const ret = await videoRetention(id);
-  const drops = biggestDrops(ret.raw, video.durationSec, 2);
   const publishedAt = video.publishedAt ?? video.createdAt;
-  const exp = await videoExpectativa(id, publishedAt);
+  // independentes → em paralelo (antes eram 3 awaits em série)
+  const [stats, ret, exp] = await Promise.all([
+    videoDetailStats(id),
+    videoRetention(id),
+    videoExpectativa(id, publishedAt),
+  ]);
+  const drops = biggestDrops(ret.raw, video.durationSec, 2);
 
   const totalDevices = stats.devices.reduce((a, d) => a + d.count, 0);
 

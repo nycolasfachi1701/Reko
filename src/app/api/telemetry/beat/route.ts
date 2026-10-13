@@ -21,17 +21,22 @@ export async function POST(req: NextRequest) {
   const positionSec = Math.max(0, Math.floor(Number(body.positionSec ?? 0)));
   // limita o incremento para evitar inflar métrica
   const watchedDelta = Math.max(0, Math.min(120, Math.floor(Number(body.watchedDelta ?? 0))));
-  const duration = Math.max(0, Math.floor(Number(body.duration ?? 0)));
   if (!sessionId) return new Response(null, { status: 400 });
 
   const vs = await db.viewSession.findUnique({
     where: { id: sessionId },
-    select: { userId: true, maxPositionSec: true },
+    // a duração vem do BANCO, não do cliente: senão um viewer poderia forjar
+    // `duration` pequena e marcar "concluído" sem assistir, liberando o
+    // certificado de uma trilha obrigatória.
+    select: { userId: true, maxPositionSec: true, video: { select: { durationSec: true } } },
   });
   if (!vs || vs.userId !== user.id) return new Response(null, { status: 403 });
 
-  const maxPositionSec = Math.max(vs.maxPositionSec, positionSec);
-  const completed = duration > 0 && maxPositionSec >= Math.floor(duration * 0.95);
+  const durationSec = vs.video.durationSec;
+  // clampa a posição à duração real (posição forjada não infla o progresso)
+  const clampedPos = durationSec > 0 ? Math.min(positionSec, durationSec) : positionSec;
+  const maxPositionSec = Math.max(vs.maxPositionSec, clampedPos);
+  const completed = durationSec > 0 && maxPositionSec >= Math.floor(durationSec * 0.95);
 
   await db.$transaction([
     db.viewSession.update({

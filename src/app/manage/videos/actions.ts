@@ -19,9 +19,12 @@ async function assertManager() {
 function revalidateCatalog(): void {
   revalidatePath("/manage/videos");
   // revalidateTag em after() (pós-resposta): a listagem de gestão já é
-  // force-dynamic, então a UI atualiza pelo router.refresh; o feed é
-  // invalidado em background sem pendurar a action.
-  after(() => revalidateTag("feed"));
+  // force-dynamic, então a UI atualiza pelo router.refresh; o feed e os cards
+  // de trilha (que guardam os videoIds) são invalidados em background.
+  after(() => {
+    revalidateTag("feed");
+    revalidateTag("tracks");
+  });
 }
 
 export async function publishVideo(id: string): Promise<void> {
@@ -54,6 +57,7 @@ export async function deleteVideo(id: string): Promise<void> {
 
   await db.video.delete({ where: { id } });
   revalidateTag("feed");
+  revalidateTag("tracks"); // o vídeo pode estar em trilhas (TrackItem em cascata)
 
   // Remove os arquivos locais (best-effort). Em R2 isso seria feito no driver.
   if (process.env.STORAGE_DRIVER !== "r2") {

@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { Role, VideoStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/session";
 import { deviceFromUA } from "@/lib/telemetry/device";
@@ -22,9 +23,14 @@ export async function POST(req: NextRequest) {
 
   const video = await db.video.findUnique({
     where: { id: videoId },
-    select: { id: true },
+    select: { status: true },
   });
   if (!video) return new Response("Vídeo não encontrado", { status: 404 });
+  // só registra view de vídeo publicado (gestor pode registrar em preview)
+  const isManager = user.role === Role.MANAGER || user.role === Role.ADMIN;
+  if (video.status !== VideoStatus.PUBLISHED && !isManager) {
+    return new Response("Vídeo indisponível", { status: 404 });
+  }
 
   const referrer =
     typeof body.referrer === "string" && body.referrer

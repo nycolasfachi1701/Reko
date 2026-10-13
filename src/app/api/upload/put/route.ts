@@ -1,8 +1,8 @@
 import { type NextRequest } from "next/server";
 import { createWriteStream } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, unlink } from "node:fs/promises";
 import { dirname } from "node:path";
-import { Readable } from "node:stream";
+import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { Role } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -45,7 +45,30 @@ export async function PUT(req: NextRequest) {
 
   await mkdir(dirname(path), { recursive: true });
   const nodeStream = Readable.fromWeb(req.body as unknown as Parameters<typeof Readable.fromWeb>[0]);
-  await pipeline(nodeStream, createWriteStream(path));
+
+  // Cap REAL durante o streaming: o header Content-Length pode ser omitido
+  // (envio chunked), então contamos os bytes e abortamos ao passar do limite.
+  let received = 0;
+  const limiter = new Transform({
+    transform(chunk, _enc, cb) {
+      received += chunk.length;
+      if (received > MAX_VIDEO_BYTES) {
+        cb(new Error("TOO_LARGE"));
+        return;
+      }
+      cb(null, chunk);
+    },
+  });
+
+  try {
+    await pipeline(nodeStream, limiter, createWriteStream(path));
+  } catch (e) {
+    await unlink(path).catch(() => {}); // remove o parcial
+    if (e instanceof Error && e.message === "TOO_LARGE") {
+      return new Response("Arquivo maior que o limite (2 GB)", { status: 413 });
+    }
+    throw e;
+  }
 
   return new Response(null, { status: 204 });
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma, Role, TrackStatus } from "@prisma/client";
+import { Prisma, Role, TrackStatus, VideoStatus } from "@prisma/client";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { after } from "next/server";
 import { db } from "@/lib/db";
@@ -148,6 +148,16 @@ export async function addItem(
   moduleId: string | null,
 ): Promise<void> {
   await assertManager();
+  // só vídeos publicados podem entrar na trilha: um rascunho/arquivado não é
+  // assistível pelo espectador e travaria a conclusão/certificado.
+  const video = await db.video.findUnique({
+    where: { id: videoId },
+    select: { status: true },
+  });
+  if (!video) throw new Error("Vídeo não encontrado.");
+  if (video.status !== VideoStatus.PUBLISHED) {
+    throw new Error("Só é possível adicionar vídeos publicados à trilha.");
+  }
   // ordem = fim do container (módulo específico, ou os soltos quando null)
   const max = await db.trackItem.aggregate({
     where: { trackId, moduleId },

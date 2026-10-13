@@ -38,11 +38,15 @@ export async function loginAction(
     return { error: GENERIC_ERROR };
   }
 
-  const limit = rateLimit(`login:${email}`, 5, 15 * 60);
-  if (!limit.ok) {
+  const headerStore = await headers();
+  const ip = getClientIp(headerStore);
+
+  // Balde por e-mail: trava força-bruta numa conta (consome a cada tentativa).
+  const byEmail = rateLimit(`login:${email}`, 5, 15 * 60);
+  if (!byEmail.ok) {
     return {
       error: `Muitas tentativas. Tente novamente em ${Math.ceil(
-        limit.retryAfterSec / 60,
+        byEmail.retryAfterSec / 60,
       )} min.`,
     };
   }
@@ -53,13 +57,23 @@ export async function loginAction(
   const ok = await verifyPassword(user?.passwordHash ?? DUMMY_HASH, password);
 
   if (!user || !user.passwordHash || !ok) {
+    // Balde por IP consumido só em FALHAS: trava password spraying (1 senha em
+    // muitas contas do mesmo IP) sem penalizar logins bem-sucedidos de um
+    // escritório atrás de um único IP (NAT).
+    const byIp = rateLimit(`login-ip:${ip}`, 50, 15 * 60);
+    if (!byIp.ok) {
+      return {
+        error: `Muitas tentativas. Tente novamente em ${Math.ceil(
+          byIp.retryAfterSec / 60,
+        )} min.`,
+      };
+    }
     return { error: GENERIC_ERROR };
   }
 
-  const headerStore = await headers();
   await createSession(user, {
     userAgent: headerStore.get("user-agent") ?? "",
-    ip: getClientIp(headerStore),
+    ip,
   });
 
   redirect(destinationFor(user.role, formData.get("next")));

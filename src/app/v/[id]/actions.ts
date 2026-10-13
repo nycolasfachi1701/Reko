@@ -1,16 +1,32 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Role, VoteValue } from "@prisma/client";
+import { Role, VoteValue, VideoStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth/require-role";
 import { REACTION_EMOJIS } from "./reactions";
 
 const MAX_COMMENT = 2000;
 
+// Só se interage com vídeo publicado. Gestor/admin pode interagir em rascunho
+// (preview). Evita que um espectador que adivinhe o id plante dados/confirme a
+// existência de um vídeo não publicado (que a UI esconde com notFound).
+async function assertInteractable(videoId: string, role: Role): Promise<void> {
+  const video = await db.video.findUnique({
+    where: { id: videoId },
+    select: { status: true },
+  });
+  if (!video) throw new Error("Vídeo não encontrado.");
+  const isManager = role === Role.MANAGER || role === Role.ADMIN;
+  if (video.status !== VideoStatus.PUBLISHED && !isManager) {
+    throw new Error("Vídeo indisponível.");
+  }
+}
+
 /** Like/Dislike: um voto por usuário por vídeo; clicar de novo no mesmo remove. */
 export async function toggleVote(videoId: string, value: VoteValue): Promise<void> {
   const user = await requireUser();
+  await assertInteractable(videoId, user.role);
   const where = { videoId_userId: { videoId, userId: user.id } };
 
   const existing = await db.vote.findUnique({ where });
@@ -32,6 +48,7 @@ export async function toggleReaction(videoId: string, emoji: string): Promise<vo
     throw new Error("Reação inválida.");
   }
   const user = await requireUser();
+  await assertInteractable(videoId, user.role);
   const where = { videoId_userId_emoji: { videoId, userId: user.id, emoji } };
 
   const existing = await db.reaction.findUnique({ where });
@@ -57,8 +74,7 @@ export async function postComment(
     throw new Error(`O comentário deve ter até ${MAX_COMMENT} caracteres.`);
   }
 
-  const video = await db.video.findUnique({ where: { id: videoId }, select: { id: true } });
-  if (!video) throw new Error("Vídeo não encontrado.");
+  await assertInteractable(videoId, user.role);
 
   if (parentId) {
     const parent = await db.comment.findUnique({
