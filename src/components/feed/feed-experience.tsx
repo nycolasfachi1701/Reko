@@ -372,15 +372,6 @@ export function FeedExperience({
         </header>
 
         <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl px-6 pb-16">
-          {/* Um h1 por estado (área atual), para leitor de tela. */}
-          <h1 className="sr-only">
-            {view === "videos"
-              ? "Vídeos"
-              : view === "tracks"
-                ? "Trilhas"
-                : "Minhas obrigatórias"}
-          </h1>
-
           {/* Navegação (mobile): pílulas roláveis */}
           <nav className="rk-nav-mobile" aria-label="Áreas">
             {nav.map((item) => (
@@ -463,9 +454,9 @@ export function FeedExperience({
                       <span className="h-[7px] w-[7px] rounded-full bg-brand shadow-[0_0_0_4px_rgba(255,102,0,0.25)]" />
                       Em destaque
                     </span>
-                    <h2 className="mb-3 font-display text-[clamp(28px,4vw,44px)] font-extrabold leading-[1.03] tracking-tight text-white">
+                    <p className="mb-3 font-display text-[clamp(28px,4vw,44px)] font-extrabold leading-[1.03] tracking-tight text-white">
                       {featured.title}
-                    </h2>
+                    </p>
                     <p className="mb-5 max-w-[46ch] text-[15px] text-[#d9d2c9]">
                       {formatViews(featured.views)} · {formatDuration(featured.durationSec)} ·{" "}
                       {formatRelativeTime(new Date(featured.publishedAt))}
@@ -475,9 +466,9 @@ export function FeedExperience({
               ) : null}
 
               <div className="mb-4 flex items-baseline justify-between">
-                <h2 className="font-display text-xl font-bold tracking-tight">
+                <h1 className="font-display text-xl font-bold tracking-tight">
                   {tag === "Todos" ? "Todos os vídeos" : tag}
-                </h2>
+                </h1>
                 <span className="text-[13px] text-fg-mut tabular-nums">
                   {list.length} {list.length === 1 ? "vídeo" : "vídeos"}
                 </span>
@@ -503,7 +494,7 @@ export function FeedExperience({
           {view === "tracks" ? (
             <section className="pt-6">
               <div className="mb-4 flex items-baseline justify-between">
-                <h2 className="font-display text-xl font-bold tracking-tight">Trilhas</h2>
+                <h1 className="font-display text-xl font-bold tracking-tight">Trilhas</h1>
                 <span className="text-[13px] text-fg-mut tabular-nums">
                   {tracks.length} {tracks.length === 1 ? "trilha" : "trilhas"}
                 </span>
@@ -528,9 +519,9 @@ export function FeedExperience({
           {view === "required" ? (
             <section className="pt-6">
               <div className="mb-4 flex items-baseline justify-between">
-                <h2 className="font-display text-xl font-bold tracking-tight">
+                <h1 className="font-display text-xl font-bold tracking-tight">
                   Minhas obrigatórias
-                </h2>
+                </h1>
                 <span className="text-[13px] text-fg-mut tabular-nums">
                   {requiredTracks.length}{" "}
                   {requiredTracks.length === 1 ? "trilha" : "trilhas"}
