@@ -1,7 +1,7 @@
 "use server";
 
-import { rm, unlink } from "node:fs/promises";
-import { basename, extname } from "node:path";
+import { rm, unlink, writeFile, mkdir } from "node:fs/promises";
+import { basename, extname, dirname } from "node:path";
 import { Role, VideoStatus } from "@prisma/client";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { after } from "next/server";
@@ -73,6 +73,54 @@ export async function deleteVideo(id: string): Promise<void> {
   }
 
   revalidatePath("/manage/videos");
+}
+
+const MAX_VTT_BYTES = 2 * 1024 * 1024; // 2 MB
+
+// Envia/atualiza as legendas (.vtt) de um vídeo. O conteúdo chega como texto
+// (lido do arquivo no cliente) e é gravado no storage em captions/<id>.vtt.
+export async function uploadCaptions(videoId: string, vtt: string): Promise<void> {
+  await assertManager();
+  if (process.env.STORAGE_DRIVER === "r2") {
+    throw new Error("Upload de legendas ainda não suportado no R2.");
+  }
+  const head = vtt.replace(/^﻿/, "").trimStart();
+  if (!head.startsWith("WEBVTT")) {
+    throw new Error("Arquivo inválido: use um .vtt (deve começar com WEBVTT).");
+  }
+  if (Buffer.byteLength(vtt, "utf8") > MAX_VTT_BYTES) {
+    throw new Error("Legenda muito grande (máx. 2 MB).");
+  }
+
+  const video = await db.video.findUnique({
+    where: { id: videoId },
+    select: { id: true },
+  });
+  if (!video) throw new Error("Vídeo não encontrado.");
+
+  const key = `captions/${videoId}.vtt`;
+  const path = resolveKeyPath(key);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, vtt, "utf8");
+
+  await db.video.update({ where: { id: videoId }, data: { captionsKey: key } });
+  revalidatePath(`/manage/videos/${videoId}/edit`);
+  revalidatePath(`/v/${videoId}`);
+}
+
+export async function removeCaptions(videoId: string): Promise<void> {
+  await assertManager();
+  const video = await db.video.findUnique({
+    where: { id: videoId },
+    select: { captionsKey: true },
+  });
+  if (!video?.captionsKey) return;
+  if (process.env.STORAGE_DRIVER !== "r2") {
+    await unlink(resolveKeyPath(video.captionsKey)).catch(() => {});
+  }
+  await db.video.update({ where: { id: videoId }, data: { captionsKey: null } });
+  revalidatePath(`/manage/videos/${videoId}/edit`);
+  revalidatePath(`/v/${videoId}`);
 }
 
 export interface UpdateVideoInput {

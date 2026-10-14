@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth/require-role";
 import { db } from "@/lib/db";
 import { Card } from "@/components/ui";
 import { EditVideoForm } from "./edit-form";
+import { CaptionsField } from "./captions-field";
 
 export default async function EditVideoPage({
   params,
@@ -44,6 +45,10 @@ export default async function EditVideoPage({
                   : "",
             }}
           />
+        </Card>
+
+        <Card className="mt-6 p-6">
+          <CaptionsField videoId={video.id} hasCaptions={Boolean(video.captionsKey)} />
         </Card>
       </main>
     </>

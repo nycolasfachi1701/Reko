@@ -75,6 +75,7 @@ model Video {
   description             String      @db.Text
   storageKey              String      // arquivo original enviado
   hlsKey                  String?     // playlist master HLS (quando transcodificado)
+  captionsKey             String?     // legendas .vtt (quando enviadas)
   thumbnailUrl            String?
   durationSec             Int
   status                  VideoStatus @default(DRAFT)

@@ -125,6 +125,7 @@ export default async function WatchPage({
   const storage = getStorage();
   const src = storage.playbackUrl(video.storageKey);
   const hlsSrc = video.hlsKey ? storage.playbackUrl(video.hlsKey) : null;
+  const captionsSrc = video.captionsKey ? storage.playbackUrl(video.captionsKey) : null;
   const startAt = t ? Math.max(0, Number.parseInt(t, 10) || 0) : 0;
   const publishedAt = video.publishedAt ?? video.createdAt;
 
@@ -247,6 +248,7 @@ export default async function WatchPage({
               <VideoPlayer
                 src={src}
                 hlsSrc={hlsSrc}
+                captionsSrc={captionsSrc}
                 poster={video.thumbnailUrl}
                 title={video.title}
                 videoId={video.id}

@@ -16,6 +16,7 @@ const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 export function VideoPlayer({
   src,
   hlsSrc,
+  captionsSrc,
   poster,
   title,
   videoId,
@@ -24,6 +25,7 @@ export function VideoPlayer({
 }: {
   src: string; // mp4 (fallback)
   hlsSrc?: string | null; // master.m3u8 (adaptive), quando transcodificado
+  captionsSrc?: string | null; // legendas .vtt, quando enviadas
   poster: string | null;
   title: string;
   videoId: string;
@@ -81,6 +83,16 @@ export function VideoPlayer({
   const [controlsVisible, setControlsVisible] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [captionsOn, setCaptionsOn] = useState(false);
+
+  const toggleCaptions = useCallback(() => {
+    const v = videoRef.current;
+    const tt = v?.textTracks?.[0];
+    if (!tt) return;
+    const next = tt.mode !== "showing";
+    tt.mode = next ? "showing" : "hidden";
+    setCaptionsOn(next);
+  }, []);
 
   const shareAtCurrent = useCallback(async () => {
     const t = Math.floor(videoRef.current?.currentTime ?? 0);
@@ -178,6 +190,9 @@ export function VideoPlayer({
           if (v) v.muted = !v.muted;
           break;
         }
+        case "c":
+          toggleCaptions();
+          break;
         case "?":
           setShowShortcuts((s) => !s);
           break;
@@ -189,7 +204,7 @@ export function VideoPlayer({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePlay, seekTo, changeVolume, toggleFullscreen, showControlsTemporarily]);
+  }, [togglePlay, seekTo, changeVolume, toggleFullscreen, toggleCaptions, showControlsTemporarily]);
 
   useEffect(() => {
     const onFs = () => setFullscreen(Boolean(document.fullscreenElement));
@@ -212,6 +227,7 @@ export function VideoPlayer({
       className="group relative aspect-video w-full overflow-hidden rounded-lg bg-black"
       onMouseMove={showControlsTemporarily}
       onMouseLeave={() => playing && setControlsVisible(false)}
+      onFocusCapture={showControlsTemporarily}
     >
       <video
         ref={videoRef}
@@ -241,7 +257,16 @@ export function VideoPlayer({
           setMuted(e.currentTarget.muted);
         }}
         onRateChange={(e) => setRate(e.currentTarget.playbackRate)}
-      />
+      >
+        {captionsSrc ? (
+          <track
+            kind="captions"
+            src={captionsSrc}
+            srcLang="pt"
+            label="Português"
+          />
+        ) : null}
+      </video>
 
       {/* Botão central de play quando pausado */}
       {!playing ? (
@@ -259,7 +284,7 @@ export function VideoPlayer({
 
       {/* Barra de controles */}
       <div
-        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-8 transition-opacity duration-200 ${
+        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-8 transition-opacity duration-200 focus-within:opacity-100 ${
           controlsVisible || !playing ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -277,6 +302,28 @@ export function VideoPlayer({
           }}
           onPointerMove={(e) => {
             if (e.buttons === 1) onProgressPointer(e);
+          }}
+          onKeyDown={(e) => {
+            // navegação por teclado local (não depende do handler global);
+            // para os handled, stopPropagation evita o seek dobrado.
+            const d = videoRef.current?.duration ?? duration;
+            if (e.key === "ArrowRight") {
+              e.preventDefault();
+              e.stopPropagation();
+              seekTo(current + 5);
+            } else if (e.key === "ArrowLeft") {
+              e.preventDefault();
+              e.stopPropagation();
+              seekTo(current - 5);
+            } else if (e.key === "Home") {
+              e.preventDefault();
+              e.stopPropagation();
+              seekTo(0);
+            } else if (e.key === "End") {
+              e.preventDefault();
+              e.stopPropagation();
+              seekTo(d);
+            }
           }}
           className="group/bar relative mb-2 h-3 cursor-pointer"
         >
@@ -313,7 +360,7 @@ export function VideoPlayer({
         </div>
 
         {/* Botões */}
-        <div className="flex items-center gap-2 text-white">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-white">
           <IconButton onClick={togglePlay} label={playing ? "Pausar" : "Reproduzir"}>
             {playing ? <PauseIcon /> : <PlayIcon />}
           </IconButton>
@@ -356,6 +403,20 @@ export function VideoPlayer({
           </span>
 
           <div className="ml-auto flex items-center gap-2">
+            {captionsSrc ? (
+              <button
+                type="button"
+                onClick={toggleCaptions}
+                aria-label="Legendas"
+                aria-pressed={captionsOn}
+                title="Legendas (c)"
+                className={`grid h-9 min-w-9 place-items-center rounded px-1 text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-brand ${
+                  captionsOn ? "bg-white/20" : ""
+                }`}
+              >
+                <CcIcon />
+              </button>
+            ) : null}
             <select
               value={rate}
               onChange={(e) => {
@@ -412,7 +473,7 @@ function IconButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="grid h-8 min-w-8 place-items-center rounded px-1 text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-brand"
+      className="grid h-9 min-w-9 place-items-center rounded px-1 text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-brand"
     >
       {children}
     </button>
@@ -426,12 +487,51 @@ function ShortcutsOverlay({
   title: string;
   onClose: () => void;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // Diálogo modal acessível: move o foco para dentro ao abrir, prende o Tab,
+  // isola os atalhos do player (nada vaza para trás) e devolve o foco ao
+  // gatilho ao fechar.
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      e.stopPropagation(); // impede que os atalhos do player atuem por trás
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const nodes = panelRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!nodes || nodes.length === 0) return;
+      const first = nodes[0]!;
+      const last = nodes[nodes.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      prev?.focus?.();
+    };
+  }, [onClose]);
+
   const items: [string, string][] = [
     ["Espaço", "Reproduzir / pausar"],
     ["← / →", "Voltar / avançar 5s"],
     ["↑ / ↓", "Volume"],
     ["f", "Tela cheia"],
     ["m", "Mudo"],
+    ["c", "Legendas"],
     ["?", "Mostrar/ocultar atalhos"],
   ];
   return (
@@ -440,6 +540,10 @@ function ShortcutsOverlay({
       onClick={onClose}
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Atalhos do player — ${title}`}
         className="w-full max-w-sm rounded-lg border border-white/15 bg-surface-1 p-5"
         onClick={(e) => e.stopPropagation()}
       >
@@ -457,6 +561,7 @@ function ShortcutsOverlay({
           ))}
         </dl>
         <button
+          ref={closeRef}
           type="button"
           onClick={onClose}
           className="mt-4 w-full rounded bg-brand py-2 text-sm font-medium text-[#111] hover:bg-brand-strong"
@@ -516,6 +621,13 @@ function ShareIcon() {
   return (
     <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M18 16a3 3 0 00-2.4 1.2l-6.1-3.1a3 3 0 000-2.2l6.1-3.1a3 3 0 10-.7-1.9c0 .2 0 .4.1.6L8.9 10.6a3 3 0 100 4l6.2 3.1c-.1.2-.1.4-.1.6a3 3 0 103-3z" />
+    </svg>
+  );
+}
+function CcIcon() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm5.5 5.5c0-.6-.4-1-1-1H6.8c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1h.7c.6 0 1-.4 1-1h-1.4v-3h1.4zm6 0c0-.6-.4-1-1-1h-.7c-.6 0-1 .4-1 1v3c0 .6.4 1 1 1h.7c.6 0 1-.4 1-1h-1.4v-3h1.4z" />
     </svg>
   );
 }

@@ -27,10 +27,15 @@ async function videoStatusForKey(rel: string): Promise<VideoStatus | null> {
         where: { id: rel.split("/")[1] ?? "" },
         select: { status: true },
       })
-    : await db.video.findFirst({
-        where: { OR: [{ storageKey: rel }, { thumbnailUrl: { endsWith: rel } }] },
-        select: { status: true },
-      });
+    : rel.startsWith("captions/")
+      ? await db.video.findUnique({
+          where: { id: (rel.split("/")[1] ?? "").replace(/\.vtt$/, "") },
+          select: { status: true },
+        })
+      : await db.video.findFirst({
+          where: { OR: [{ storageKey: rel }, { thumbnailUrl: { endsWith: rel } }] },
+          select: { status: true },
+        });
 
   const status = video?.status ?? null;
   statusCache.set(rel, { status, exp: now + STATUS_TTL_MS });
@@ -57,6 +62,7 @@ const MIME: Record<string, string> = {
   png: "image/png",
   m3u8: "application/vnd.apple.mpegurl",
   ts: "video/mp2t",
+  vtt: "text/vtt; charset=utf-8",
 };
 
 // Serve mídia do storage local, exigindo sessão e suportando Range (seek).
