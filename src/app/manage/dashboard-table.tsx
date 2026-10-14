@@ -74,7 +74,7 @@ export function DashboardTable({ rows }: { rows: DashboardRow[] }) {
           {sorted.map((v) => (
             <tr key={v.id} className="border-b border-[var(--border)]/60">
               <td className="py-2 pr-4">
-                <Link href={`/manage/videos/${v.id}`} className="font-medium hover:text-brand">
+                <Link href={`/manage/videos/${v.id}`} className="font-medium hover:text-brand-text">
                   {v.title}
                 </Link>
               </td>

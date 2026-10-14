@@ -109,7 +109,7 @@ export default async function TrackPage({
         >
           {done ? "✓" : n}
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg-hi transition-colors group-hover:text-brand">
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg-hi transition-colors group-hover:text-brand-text">
           {it.video.title}
         </span>
         <span className="shrink-0 text-xs tabular-nums text-fg-mut">
@@ -142,13 +142,13 @@ export default async function TrackPage({
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         {track.status !== TrackStatus.PUBLISHED ? (
-          <p className="mb-3 inline-block rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs text-brand">
+          <p className="mb-3 inline-block rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs text-brand-text">
             Prévia — esta trilha ainda não está publicada.
           </p>
         ) : null}
 
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">Trilha</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-text">Trilha</p>
           {assignment ? (
             <span
               className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--on-brand)]"

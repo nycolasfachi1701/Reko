@@ -258,7 +258,7 @@ export default async function WatchPage({
             </div>
 
             {video.status !== VideoStatus.PUBLISHED ? (
-              <p className="mt-3 inline-block rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs text-brand">
+              <p className="mt-3 inline-block rounded-full bg-[var(--brand-soft)] px-3 py-1 text-xs text-brand-text">
                 Prévia — este vídeo ainda não está publicado.
               </p>
             ) : null}

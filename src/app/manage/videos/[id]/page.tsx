@@ -37,7 +37,7 @@ function ExportLink({ videoId, block }: { videoId: string; block: string }) {
   return (
     <a
       href={`/api/manage/export/video/${videoId}?block=${block}`}
-      className="text-sm text-brand hover:underline"
+      className="text-sm text-brand-text hover:underline"
     >
       Exportar CSV
     </a>

@@ -126,7 +126,7 @@ function Card({ v }: { v: FeedVideo }) {
           {initials(v.uploaderName)}
         </span>
         <div className="min-w-0">
-          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand">
+          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand-text">
             {v.title}
           </h3>
           <p className="mt-1 text-[13px] text-fg-mut tabular-nums">
@@ -166,7 +166,7 @@ function TrackCard({ t }: { t: FeedTrack }) {
         ) : null}
       </div>
       <div>
-        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand">
+        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand-text">
           {t.title}
         </h3>
         {t.videoCount === 0 ? (

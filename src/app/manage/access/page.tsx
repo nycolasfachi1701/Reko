@@ -69,7 +69,7 @@ export default async function UsersPage() {
                 <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-xs text-fg-lo">
                   {ROLE_LABEL[u.role]}
                 </span>
-                <span className="text-xs text-fg-mut transition-colors group-hover:text-brand">
+                <span className="text-xs text-fg-mut transition-colors group-hover:text-brand-text">
                   Editar →
                 </span>
               </div>

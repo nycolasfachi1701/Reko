@@ -57,7 +57,7 @@ export function UpNext({ videos }: { videos: UpNextItem[] }) {
                 </span>
               </div>
               <div className="min-w-0 flex-1 py-0.5">
-                <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand">
+                <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-fg-hi transition-colors group-hover:text-brand-text">
                   {v.title}
                 </h3>
                 <p className="mt-1 truncate text-xs text-fg-mut">{v.uploaderName}</p>

@@ -163,7 +163,7 @@ export function TrackAssignments({
                       s.tone === "done"
                         ? { background: "color-mix(in srgb, var(--positive) 16%, transparent)", color: "var(--positive)" }
                         : s.tone === "doing"
-                          ? { background: "var(--brand-soft)", color: "var(--brand)" }
+                          ? { background: "var(--brand-soft)", color: "var(--brand-text)" }
                           : { background: "var(--surface-2)", color: "var(--text-mut)" }
                     }
                   >

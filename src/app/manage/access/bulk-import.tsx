@@ -142,7 +142,7 @@ export function BulkImport() {
             <a
               href={resultUrl}
               download={result.resultFileName}
-              className="mt-2 inline-block text-sm font-medium text-brand hover:underline"
+              className="mt-2 inline-block text-sm font-medium text-brand-text hover:underline"
             >
               Baixar planilha de senhas (.xlsx)
             </a>

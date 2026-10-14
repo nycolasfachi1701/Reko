@@ -13,6 +13,7 @@ const config: Config = {
           DEFAULT: "var(--brand)",
           strong: "var(--brand-strong)",
           soft: "var(--brand-soft)",
+          text: "var(--brand-text)",
         },
         surface: {
           0: "var(--surface-0)",

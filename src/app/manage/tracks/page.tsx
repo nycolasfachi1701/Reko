@@ -65,7 +65,7 @@ export default async function TracksPage() {
                   <span className="rounded-full border border-[var(--border)] px-2.5 py-0.5 text-xs text-fg-lo">
                     {STATUS_LABEL[t.status]}
                   </span>
-                  <span className="text-xs text-fg-mut transition-colors group-hover:text-brand">
+                  <span className="text-xs text-fg-mut transition-colors group-hover:text-brand-text">
                     Editar →
                   </span>
                 </div>

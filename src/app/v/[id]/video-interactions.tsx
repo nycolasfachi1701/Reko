@@ -91,7 +91,7 @@ export function VideoInteractions({
             "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors",
             likeActive ? "font-medium" : "text-fg-lo hover:bg-surface-2 hover:text-fg-hi",
           )}
-          style={likeActive ? { ...tint("var(--brand)", 15), color: "var(--brand)" } : undefined}
+          style={likeActive ? { ...tint("var(--brand)", 15), color: "var(--brand-text)" } : undefined}
         >
           <ThumbIcon />
           <span className="tabular-nums">{likes}</span>

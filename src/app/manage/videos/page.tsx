@@ -80,7 +80,7 @@ export default async function VideosPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/manage/videos/${v.id}`}
-                      className="truncate font-medium hover:text-brand"
+                      className="truncate font-medium hover:text-brand-text"
                     >
                       {v.title}
                     </Link>

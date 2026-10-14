@@ -117,7 +117,7 @@ function Landing() {
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 py-16">
-        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-brand">
+        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-brand-text">
           Plataforma de vídeos da Nstech
         </p>
         <h1 className="max-w-3xl font-display text-[clamp(32px,5vw,56px)] font-extrabold leading-[1.02] tracking-tight">

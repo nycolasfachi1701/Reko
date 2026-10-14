@@ -122,7 +122,7 @@ export default async function DashboardPage({
           <h2 className="text-lg font-semibold">Vídeos</h2>
           <a
             href={`/api/manage/export/dashboard?period=${period}`}
-            className="text-sm text-brand hover:underline"
+            className="text-sm text-brand-text hover:underline"
           >
             Exportar CSV
           </a>
